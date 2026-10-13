@@ -1,0 +1,572 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is([data-theme="dark"] *));
+
+@theme {
+  --color-slate-50: rgb(var(--n-50));
+  --color-slate-100: rgb(var(--n-100));
+  --color-slate-200: rgb(var(--n-200));
+  --color-slate-300: rgb(var(--n-300));
+  --color-slate-400: rgb(var(--n-400));
+  --color-slate-500: rgb(var(--n-500));
+  --color-slate-600: rgb(var(--n-600));
+  --color-slate-700: rgb(var(--n-700));
+  --color-slate-800: rgb(var(--n-800));
+  --color-slate-900: rgb(var(--n-900));
+  --color-slate-950: rgb(var(--n-950));
+
+  --color-brand-50: rgb(var(--b-50));
+  --color-brand-100: rgb(var(--b-100));
+  --color-brand-200: rgb(var(--b-200));
+  --color-brand-300: rgb(var(--b-300));
+  --color-brand-400: rgb(var(--b-400));
+  --color-brand-500: rgb(var(--b-500));
+  --color-brand-600: rgb(var(--b-600));
+  --color-brand-700: rgb(var(--b-700));
+  --color-brand-800: rgb(var(--b-800));
+  --color-brand-900: rgb(var(--b-900));
+
+  --color-red-50: rgb(var(--r-50));
+  --color-red-100: rgb(var(--r-100));
+  --color-red-200: rgb(var(--r-200));
+  --color-red-300: rgb(var(--r-300));
+  --color-red-400: rgb(var(--r-400));
+  --color-red-500: rgb(var(--r-500));
+  --color-red-600: rgb(var(--r-600));
+  --color-red-700: rgb(var(--r-700));
+  --color-red-800: rgb(var(--r-800));
+
+  --color-emerald-50: rgb(var(--e-50));
+  --color-emerald-100: rgb(var(--e-100));
+  --color-emerald-200: rgb(var(--e-200));
+  --color-emerald-300: rgb(var(--e-300));
+  --color-emerald-400: rgb(var(--e-400));
+  --color-emerald-500: rgb(var(--e-500));
+  --color-emerald-600: rgb(var(--e-600));
+  --color-emerald-700: rgb(var(--e-700));
+  --color-emerald-800: rgb(var(--e-800));
+
+  --color-amber-50: rgb(var(--a-50));
+  --color-amber-100: rgb(var(--a-100));
+  --color-amber-200: rgb(var(--a-200));
+  --color-amber-300: rgb(var(--a-300));
+  --color-amber-400: rgb(var(--a-400));
+  --color-amber-500: rgb(var(--a-500));
+  --color-amber-600: rgb(var(--a-600));
+  --color-amber-700: rgb(var(--a-700));
+  --color-amber-800: rgb(var(--a-800));
+
+  --color-purple-50: rgb(var(--p-50));
+  --color-purple-100: rgb(var(--p-100));
+  --color-purple-200: rgb(var(--p-200));
+  --color-purple-600: rgb(var(--p-600));
+  --color-purple-700: rgb(var(--p-700));
+  --color-purple-800: rgb(var(--p-800));
+
+  --color-canvas: rgb(var(--canvas));
+  --color-surface: rgb(var(--canvas));
+  --color-panel: rgb(var(--panel));
+  --color-raised: rgb(var(--raised));
+  --color-line: rgb(var(--line));
+  --color-line-strong: rgb(var(--line-strong));
+
+  --color-action: rgb(var(--solid-brand));
+  --color-action-hover: rgb(var(--solid-brand-hover));
+
+  --color-destructive: rgb(var(--solid-danger));
+  --color-destructive-hover: rgb(var(--solid-danger-hover));
+
+  --color-positive: rgb(var(--solid-success));
+  --color-positive-hover: rgb(var(--solid-success-hover));
+
+  --color-on-solid: rgb(var(--on-solid));
+
+  /* The sidebar and sign-in screen use Tailwind's stock blue. v4 redrew the
+     stock palette in oklch with more saturation; these are the v3 values, so
+     those screens look exactly as they did. */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
+
+  --font-sans:
+    system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans,
+    sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Consolas, Liberation Mono, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-2xs--letter-spacing: 0.01em;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.375rem;
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.5rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.625rem;
+  --text-lg--letter-spacing: -0.01em;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-xl--letter-spacing: -0.015em;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-3xl--letter-spacing: -0.025em;
+
+  --radius: 0.5rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+
+  --shadow-card: none;
+  --shadow-pop:
+    0 1px 2px rgb(var(--shadow) / 0.06),
+    0 12px 32px -8px rgb(var(--shadow) / 0.18);
+  --shadow-overlay:
+    0 1px 3px rgb(var(--shadow) / 0.08),
+    0 24px 48px -12px rgb(var(--shadow) / 0.28);
+  --shadow-focus: 0 0 0 3px rgb(var(--b-500) / 0.28);
+
+  --default-ring-color: rgb(var(--b-500));
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade-in: fade-in 120ms ease-out;
+  --animate-pop-in: pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.99);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility card {
+  /* ------------------------------------------------------------- surfaces */
+  @apply rounded-xl border border-line bg-panel;
+}
+
+@utility card-header {
+  @apply flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4;
+}
+
+@utility card-title {
+  @apply text-md font-semibold tracking-[-0.01em] text-slate-900;
+}
+
+@utility well {
+  /* A faint inset panel for nested content: filters, summaries, empty slots. */
+  @apply rounded-lg border border-line bg-raised;
+}
+
+@utility form-label {
+  /* --------------------------------------------------------------- forms */
+  @apply mb-1.5 block text-sm font-medium text-slate-700;
+}
+
+@utility form-control {
+  @apply block w-full rounded-lg border border-line-strong bg-panel px-3 py-2 text-base text-slate-900
+      shadow-[0_1px_1px_rgb(var(--shadow)/0.03)] transition
+      placeholder:text-slate-500
+      hover:border-slate-300
+      focus:border-brand-500 focus:outline-hidden focus:ring-4 focus:ring-brand-500/15
+      disabled:cursor-not-allowed disabled:border-line disabled:bg-slate-50 disabled:text-slate-500;
+}
+
+@utility form-control-error {
+  @apply border-red-400 hover:border-red-400 focus:border-red-500 focus:ring-red-500/15;
+}
+
+@utility form-hint {
+  @apply mt-1.5 text-xs text-slate-500;
+}
+
+@utility form-error {
+  @apply mt-1.5 text-xs font-medium text-red-600;
+}
+
+@utility nav-link {
+  /* ---------------------------------------------------------- navigation */
+  @apply relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-sm font-medium
+      text-slate-600 transition-colors duration-100
+      hover:bg-slate-100 hover:text-slate-900;
+}
+
+@utility nav-link-active {
+  /*
+   * The active item is a soft tint with a short rule at its leading edge,
+   * rather than a saturated bar. It marks position without shouting.
+   */
+  @apply bg-brand-50 font-semibold text-brand-700 hover:bg-brand-50 hover:text-brand-700;
+
+  &::before {
+    @apply absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-brand-600 content-[''];
+  }
+}
+
+@utility nav-section-label {
+  @apply mb-1 px-2.5 text-2xs font-semibold uppercase tracking-[0.08em] text-slate-400;
+}
+
+@utility table-wrap {
+  /* --------------------------------------------------------------- table */
+  @apply w-full overflow-x-auto;
+}
+
+@utility data-table {
+  @apply w-full min-w-[720px] border-collapse text-base;
+
+  /*
+   * No filled header band. A hairline and a small capitalised label separate
+   * the header from the body with far less ink.
+   */
+  & thead th {
+    @apply whitespace-nowrap border-b border-line bg-transparent px-4 pb-2.5 pt-3 text-left
+      text-2xs font-semibold uppercase tracking-[0.06em] text-slate-500;
+  }
+
+  & tbody td {
+    @apply border-b border-line px-4 py-3 align-middle text-base text-slate-700;
+  }
+
+  & tbody tr {
+    @apply transition-colors duration-75;
+  }
+
+  & tbody tr:hover {
+    @apply bg-slate-50;
+  }
+
+  & tbody tr:last-child td {
+    @apply border-b-0;
+  }
+}
+
+@utility icon-btn {
+  /* ------------------------------------------------------------- controls */
+  @apply inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-100;
+}
+
+@utility kbd {
+  /* A quiet keyboard-shortcut chip. */
+  @apply inline-flex h-5 min-w-5 items-center justify-center rounded border border-line bg-raised px-1.5
+      font-mono text-2xs font-medium text-slate-500;
+}
+
+@utility skeleton {
+  /* A flat placeholder block. No sweeping highlight passing over it. */
+  @apply rounded-md bg-slate-200;
+}
+
+@utility sr-only-focusable {
+  /* Hide content visually but keep it available to screen readers. */
+  &:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/*
+ * Palette
+ * -------
+ * Values are raw RGB channels so Tailwind's opacity modifiers keep working
+ * (`bg-slate-900/50`). The dark theme redefines the same names, which is why
+ * no component needs a single `dark:` variant.
+ *
+ * The neutral ramp is mirrored rather than replaced: 50 always means "the
+ * faintest surface" and 900 always means "the strongest text", in either
+ * theme. That is what lets 450 existing `text-slate-*` usages theme for free.
+ */
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Neutrals — very slightly cool, so white panels read as clean, not blue. */
+    --n-50: 246 247 250;
+    --n-100: 237 239 244;
+    --n-200: 225 228 236;
+    --n-300: 201 206 217;
+    --n-400: 150 158 174;
+    --n-500: 104 113 131;
+    --n-600: 74 82 99;
+    --n-700: 56 63 77;
+    --n-800: 37 43 54;
+    --n-900: 20 25 33;
+    --n-950: 11 14 19;
+
+    /* Brand — a crisp azure, a little cooler and cleaner than the stock blue. */
+    --b-50: 239 244 255;
+    --b-100: 219 231 254;
+    --b-200: 192 212 253;
+    --b-300: 147 181 251;
+    --b-400: 96 145 248;
+    --b-500: 59 116 245;
+    --b-600: 37 90 232;
+    --b-700: 28 71 196;
+    --b-800: 29 61 158;
+    --b-900: 28 55 125;
+
+    --r-50: 254 242 242;
+    --r-100: 254 226 226;
+    --r-200: 254 202 202;
+    --r-300: 252 165 165;
+    --r-400: 248 113 113;
+    --r-500: 239 68 68;
+    --r-600: 220 38 38;
+    --r-700: 185 28 28;
+    --r-800: 153 27 27;
+
+    --e-50: 236 253 243;
+    --e-100: 209 250 229;
+    --e-200: 167 243 208;
+    --e-300: 110 231 183;
+    --e-400: 52 211 153;
+    --e-500: 16 185 129;
+    --e-600: 5 150 105;
+    --e-700: 4 120 87;
+    --e-800: 6 95 70;
+
+    --a-50: 255 251 235;
+    --a-100: 254 243 199;
+    --a-200: 253 230 138;
+    --a-300: 252 211 77;
+    --a-400: 251 191 36;
+    --a-500: 245 158 11;
+    --a-600: 217 119 6;
+    --a-700: 180 83 9;
+    --a-800: 146 64 14;
+
+    --p-50: 250 245 255;
+    --p-100: 243 232 255;
+    --p-200: 233 213 255;
+    --p-600: 147 51 234;
+    --p-700: 126 34 206;
+    --p-800: 107 33 168;
+
+    /* Surfaces */
+    --canvas: 246 247 250;
+    --panel: 255 255 255;
+    --raised: 250 251 253;
+    --line: 226 229 237;
+    --line-strong: 205 211 223;
+    --shadow: 15 23 42;
+
+    /* Solid actions, tuned against --on-solid rather than against a surface. */
+    --solid-brand: 37 90 232;
+    --solid-brand-hover: 28 71 196;
+    --solid-danger: 220 38 38;
+    --solid-danger-hover: 185 28 28;
+    --solid-success: 5 150 105;
+    --solid-success-hover: 4 120 87;
+    --on-solid: 255 255 255;
+  }
+
+  [data-theme='dark'] {
+    color-scheme: dark;
+
+    /* Mirrored neutrals: 50 is now the faintest *raised* tint, 900 the brightest text. */
+    --n-50: 26 30 38;
+    --n-100: 33 38 48;
+    --n-200: 45 51 63;
+    --n-300: 63 71 86;
+    --n-400: 116 126 143;
+    --n-500: 154 163 178;
+    --n-600: 184 192 205;
+    --n-700: 205 212 222;
+    --n-800: 227 232 239;
+    --n-900: 243 245 249;
+    --n-950: 255 255 255;
+
+    /* Accents lighten as the stop climbs, so hover states brighten on dark. */
+    --b-50: 22 33 56;
+    --b-100: 28 45 78;
+    --b-200: 36 60 110;
+    --b-300: 55 88 160;
+    --b-400: 88 130 240;
+    --b-500: 108 148 249;
+    --b-600: 125 163 251;
+    --b-700: 150 182 252;
+    --b-800: 178 202 253;
+    --b-900: 205 221 254;
+
+    --r-50: 58 25 27;
+    --r-100: 76 31 34;
+    --r-200: 106 40 44;
+    --r-300: 152 56 60;
+    --r-400: 235 105 108;
+    --r-500: 244 124 127;
+    --r-600: 248 145 148;
+    --r-700: 251 173 175;
+    --r-800: 253 199 200;
+
+    --e-50: 16 43 34;
+    --e-100: 19 56 43;
+    --e-200: 24 78 59;
+    --e-300: 32 112 84;
+    --e-400: 52 200 146;
+    --e-500: 65 216 160;
+    --e-600: 90 226 175;
+    --e-700: 130 236 197;
+    --e-800: 172 243 216;
+
+    --a-50: 56 38 12;
+    --a-100: 71 48 14;
+    --a-200: 98 66 18;
+    --a-300: 140 95 24;
+    --a-400: 236 168 46;
+    --a-500: 246 187 74;
+    --a-600: 250 203 110;
+    --a-700: 252 219 154;
+    --a-800: 253 232 190;
+
+    --p-50: 46 26 66;
+    --p-100: 60 34 88;
+    --p-200: 84 48 122;
+    --p-600: 191 141 249;
+    --p-700: 209 170 251;
+    --p-800: 226 200 253;
+
+    --canvas: 13 16 21;
+    --panel: 21 25 32;
+    --raised: 26 31 39;
+    --line: 44 51 63;
+    --line-strong: 63 71 86;
+    --shadow: 0 0 0;
+
+    --solid-brand: 45 104 240;
+    --solid-brand-hover: 62 121 247;
+    --solid-danger: 214 45 47;
+    --solid-danger-hover: 232 62 64;
+    --solid-success: 8 145 105;
+    --solid-success-hover: 16 165 120;
+    --on-solid: 255 255 255;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-slate-900 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
+    /* The theme flip should feel like a light change, not a page reload. */
+    transition: background-color 160ms ease-out, color 160ms ease-out;
+  }
+
+  /* Figures line up in columns wherever they are compared. */
+  .tabular,
+  table td,
+  table th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* One focus treatment for every control in the app. */
+  :focus-visible {
+    @apply outline-hidden ring-2 ring-brand-500/60 ring-offset-2;
+    --tw-ring-offset-color: rgb(var(--panel));
+  }
+
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full border-[3px] border-solid border-transparent bg-slate-300 bg-clip-content;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::selection {
+    @apply bg-brand-500/25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Digital library viewers: blend the libraries' own chrome into the page. */
+.docx-viewer .docx-wrapper {
+  background: transparent;
+  padding: 24px 12px 0;
+}
+.pptx-viewer .pptx-preview-wrapper {
+  width: 100% !important;
+  box-sizing: border-box;
+  background: transparent !important;
+  padding-top: 16px;
+}
+.pptx-viewer .pptx-preview-wrapper > div {
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}

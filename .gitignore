@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Environment — never commit real secrets
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+
+# Uploaded files (repository documents, covers, logos)
+backend/src/uploads/**/*
+!backend/src/uploads/.gitkeep
+
+# Data backups written by maintenance scripts (e.g. accession renumbering)
+backend/backups/
+
+# Logs and coverage
+*.log
+npm-debug.log*
+logs/
+coverage/
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.claude/
+docs/
+.vite/

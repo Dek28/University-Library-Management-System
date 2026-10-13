@@ -1,0 +1,231 @@
+const InventoryAudit = require('../models/InventoryAudit');
+const ResourceCopy = require('../models/ResourceCopy');
+const ApiError = require('../utils/ApiError');
+const auditService = require('./audit.service');
+const resourceService = require('./resource.service');
+const { buildPagination, paginate, compact } = require('../utils/query');
+const { auditCode } = require('../utils/identifiers');
+
+const POPULATE = [
+  { path: 'shelf', select: 'name section rack' },
+  { path: 'category', select: 'name' },
+  { path: 'startedBy', select: 'firstName lastName' },
+  { path: 'completedBy', select: 'firstName lastName' },
+];
+
+/** Copy-level stock counts, optionally narrowed to a shelf or category. */
+async function stockSummary({ shelf, category } = {}) {
+  const match = compact({ shelf });
+  const pipeline = [];
+  if (category) {
+    pipeline.push(
+      { $lookup: { from: 'resources', localField: 'resource', foreignField: '_id', as: 'res' } },
+      { $unwind: '$res' },
+      { $match: { 'res.category': category } },
+    );
+  }
+  pipeline.unshift({ $match: { isDeleted: { $ne: true }, ...match } });
+  pipeline.push({ $group: { _id: '$status', count: { $sum: 1 } } });
+
+  const rows = await ResourceCopy.aggregate(pipeline);
+  const byStatus = rows.reduce((acc, r) => { acc[r._id] = r.count; return acc; }, {});
+  const total = rows.reduce((sum, r) => sum + r.count, 0);
+  return { total, byStatus };
+}
+
+async function listCopiesByStatus(status, query = {}) {
+  const pagination = buildPagination(query, { defaultSort: 'accessionNumber', defaultLimit: 50 });
+  const filter = compact({ status, shelf: query.shelf });
+  return paginate(ResourceCopy, filter, pagination, {
+    populate: [
+      { path: 'resource', select: 'title resourceType' },
+      { path: 'shelf', select: 'name section rack' },
+    ],
+  });
+}
+
+async function listAudits(query = {}) {
+  const pagination = buildPagination(query, { defaultSort: '-createdAt' });
+  const filter = compact({ status: query.status, shelf: query.shelf });
+  return paginate(InventoryAudit, filter, pagination, { populate: POPULATE, select: '-items' });
+}
+
+async function getAudit(id) {
+  const audit = await InventoryAudit.findById(id).populate([
+    ...POPULATE,
+    { path: 'items.copy', select: 'accessionNumber barcode resource status' },
+  ]);
+  if (!audit) throw ApiError.notFound('Inventory audit not found');
+  return audit;
+}
+
+/** Opens a stock-verification exercise and snapshots the expected population. */
+async function startAudit(payload, actor, context = {}) {
+  const open = await InventoryAudit.findOne({ status: 'in_progress' });
+  if (open) {
+    throw ApiError.conflict(`Audit "${open.title}" is already in progress. Complete or cancel it first.`);
+  }
+
+  const scope = compact({ shelf: payload.shelf });
+  const expectedCount = await ResourceCopy.countDocuments({
+    ...scope,
+    status: { $nin: ['withdrawn', 'lost'] },
+  });
+
+  const audit = await InventoryAudit.create({
+    auditCode: auditCode(),
+    title: payload.title,
+    description: payload.description || '',
+    shelf: payload.shelf || null,
+    category: payload.category || null,
+    startedBy: actor._id,
+    expectedCount,
+  });
+
+  await auditService.record({
+    ...context, actor, action: 'inventory_audit_started', entityType: 'InventoryAudit', entityId: audit._id,
+    entityLabel: audit.auditCode, newValue: { title: audit.title, expectedCount },
+  });
+  return getAudit(audit._id);
+}
+
+/**
+ * Records one scanned copy. Re-scanning the same copy replaces the earlier
+ * entry so a corrected scan does not double-count.
+ */
+async function recordItem(auditId, { identifier, foundStatus, condition, remark }, actor, context = {}) {
+  const audit = await InventoryAudit.findById(auditId);
+  if (!audit) throw ApiError.notFound('Inventory audit not found');
+  if (audit.status !== 'in_progress') throw ApiError.badRequest('This audit is closed');
+
+  const copy = await ResourceCopy.findOne({
+    $or: [{ barcode: String(identifier).trim() }, { accessionNumber: String(identifier).toUpperCase().trim() }],
+  });
+  if (!copy) throw ApiError.notFound(`No copy found for "${identifier}"`);
+
+  const existingIndex = audit.items.findIndex((i) => String(i.copy) === String(copy._id));
+  const entry = {
+    copy: copy._id,
+    accessionNumber: copy.accessionNumber,
+    expectedStatus: copy.status,
+    foundStatus,
+    condition: condition || copy.condition,
+    remark: remark || '',
+    verifiedBy: actor._id,
+    verifiedAt: new Date(),
+  };
+
+  if (existingIndex >= 0) audit.items[existingIndex] = { ...audit.items[existingIndex].toObject(), ...entry };
+  else audit.items.push(entry);
+
+  audit.verifiedCount = audit.items.filter((i) => i.foundStatus === 'found').length;
+  audit.missingCount = audit.items.filter((i) => i.foundStatus === 'missing').length;
+  audit.damagedCount = audit.items.filter((i) => i.foundStatus === 'damaged').length;
+  audit.misplacedCount = audit.items.filter((i) => i.foundStatus === 'misplaced').length;
+  await audit.save();
+
+  // Verification date on the copy itself supports "not seen since" reporting.
+  copy.lastVerifiedAt = new Date();
+  await copy.save();
+
+  return { audit: await getAudit(auditId), copy };
+}
+
+/**
+ * Closes an audit. When `applyAdjustments` is set, copies reported missing or
+ * damaged have their status updated. Copies that are on loan are never
+ * touched, because their whereabouts are already accounted for.
+ */
+async function completeAudit(auditId, { applyAdjustments = true, notes }, actor, context = {}) {
+  const audit = await InventoryAudit.findById(auditId);
+  if (!audit) throw ApiError.notFound('Inventory audit not found');
+  if (audit.status !== 'in_progress') throw ApiError.badRequest('This audit is already closed');
+
+  const adjustments = [];
+  if (applyAdjustments) {
+    for (const item of audit.items) {
+      const nextStatus = { missing: 'missing', damaged: 'damaged' }[item.foundStatus];
+      if (!nextStatus) continue;
+
+      // eslint-disable-next-line no-await-in-loop
+      const copy = await ResourceCopy.findById(item.copy);
+      if (!copy || copy.status === 'borrowed') continue;
+
+      const previous = copy.status;
+      copy.status = nextStatus;
+      if (item.condition) copy.condition = item.condition;
+      // eslint-disable-next-line no-await-in-loop
+      await copy.save();
+      // eslint-disable-next-line no-await-in-loop
+      await resourceService.syncAvailability(copy.resource);
+      adjustments.push({ accessionNumber: copy.accessionNumber, from: previous, to: nextStatus });
+    }
+  }
+
+  audit.status = 'completed';
+  audit.completedAt = new Date();
+  audit.completedBy = actor._id;
+  audit.appliedAdjustments = applyAdjustments;
+  audit.notes = notes || audit.notes;
+  await audit.save();
+
+  await auditService.record({
+    ...context, actor, action: 'inventory_audit_completed', entityType: 'InventoryAudit', entityId: audit._id,
+    entityLabel: audit.auditCode,
+    newValue: {
+      expected: audit.expectedCount,
+      verified: audit.verifiedCount,
+      missing: audit.missingCount,
+      damaged: audit.damagedCount,
+      adjustmentsApplied: adjustments.length,
+    },
+  });
+
+  return { audit: await getAudit(auditId), adjustments };
+}
+
+async function cancelAudit(auditId, reason, actor, context = {}) {
+  const audit = await InventoryAudit.findById(auditId);
+  if (!audit) throw ApiError.notFound('Inventory audit not found');
+  if (audit.status !== 'in_progress') throw ApiError.badRequest('This audit is already closed');
+
+  audit.status = 'cancelled';
+  audit.completedAt = new Date();
+  audit.completedBy = actor._id;
+  audit.notes = `${audit.notes} | Cancelled: ${reason || 'no reason given'}`.trim();
+  await audit.save();
+
+  await auditService.record({
+    ...context, actor, action: 'inventory_audit_completed', entityType: 'InventoryAudit', entityId: audit._id,
+    entityLabel: audit.auditCode, description: `Cancelled: ${reason || ''}`,
+  });
+  return getAudit(auditId);
+}
+
+/** Direct status change on a single copy, outside a formal audit. */
+async function adjustCopy(copyId, { status, condition, reason }, actor, context = {}) {
+  const copy = await ResourceCopy.findById(copyId);
+  if (!copy) throw ApiError.notFound('Copy not found');
+  if (copy.status === 'borrowed') {
+    throw ApiError.conflict('This copy is on loan. Use the returns desk to record a loss or damage.');
+  }
+
+  const before = { status: copy.status, condition: copy.condition };
+  copy.status = status;
+  if (condition) copy.condition = condition;
+  copy.notes = reason ? `${copy.notes} | ${reason}`.trim() : copy.notes;
+  copy.updatedBy = actor._id;
+  await copy.save();
+  await resourceService.syncAvailability(copy.resource);
+
+  await auditService.record({
+    ...context, actor, action: 'inventory_adjusted', entityType: 'ResourceCopy', entityId: copy._id,
+    entityLabel: copy.accessionNumber, oldValue: before, newValue: { status, condition, reason },
+  });
+  return copy;
+}
+
+module.exports = {
+  stockSummary, listCopiesByStatus, listAudits, getAudit,
+  startAudit, recordItem, completeAudit, cancelAudit, adjustCopy,
+};
