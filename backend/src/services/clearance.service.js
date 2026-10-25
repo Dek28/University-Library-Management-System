@@ -103,13 +103,15 @@ async function list(query = {}, options = {}) {
   const range = dateRange(query.from, query.to);
   if (range) filter.createdAt = range;
 
-  const result = await paginate(Clearance, filter, pagination, { populate: POPULATE });
-
-  // Department filtering happens after population because it lives on the user.
+  // The department lives on the user, so resolve it to member ids before
+  // paging; filtering a page afterwards would give short pages and wrong totals.
   if (query.department) {
-    result.items = result.items.filter((c) => String(c.user?.department?._id) === String(query.department));
+    const members = await User.find({ department: query.department }).select('_id').lean();
+    const memberIds = members.map((m) => m._id);
+    filter.user = query.user ? { $in: memberIds.filter((m) => String(m) === String(query.user)) } : { $in: memberIds };
   }
-  return result;
+
+  return paginate(Clearance, filter, pagination, { populate: POPULATE });
 }
 
 async function getById(id) {

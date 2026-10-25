@@ -1,8 +1,8 @@
 const { z, password, email } = require('./common.validator');
 
 const loginSchema = z.object({
-  identifier: z.string().trim().min(3, 'Enter your email, registration or staff number'),
-  password: z.string().min(1, 'Password is required'),
+  identifier: z.string().trim().min(3, 'Enter your email, registration or staff number').max(100),
+  password: z.string().min(1, 'Password is required').max(128),
 });
 
 const changePasswordSchema = z.object({

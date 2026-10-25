@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import { Library } from 'lucide-react';
+
 import { dashboardApi } from '../../api/endpoints';
 import { Card, StatCard, PageHeader, ErrorState, StatusBadge } from '../../components/ui';
 import { CirculationLineChart, CategoryDonut, RankingBarChart } from '../../components/charts/Charts';
@@ -51,43 +51,44 @@ export default function AdminDashboard() {
     <>
       <PageHeader title="Dashboard" breadcrumbs={[{ label: 'Dashboard' }]} />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {tiles.map((tile) => <StatCard key={tile.label} {...tile} loading={isLoading} />)}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {tiles.map((tile) => <StatCard compact key={tile.label} {...tile} loading={isLoading} />)}
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-3 grid gap-3 xl:grid-cols-3">
         <Card title="Monthly circulation" className="xl:col-span-2">
-          {isLoading ? <div className="skeleton h-[260px]" /> : <CirculationLineChart data={charts.circulationTrend || []} />}
+          {isLoading ? <div className="skeleton h-[190px]" /> : <CirculationLineChart data={charts.circulationTrend || []} height={190} />}
         </Card>
 
         <Card title="Loans by category">
-          {isLoading ? <div className="skeleton h-[260px]" /> : <CategoryDonut data={charts.topCategories || []} />}
+          {isLoading ? <div className="skeleton h-[190px]" /> : <CategoryDonut data={charts.topCategories || []} height={190} />}
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {secondaryTiles.map((tile) => <StatCard key={tile.label} {...tile} loading={isLoading} />)}
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {secondaryTiles.map((tile) => <StatCard compact key={tile.label} {...tile} loading={isLoading} />)}
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
         <Card title="Loans by department">
-          {isLoading ? <div className="skeleton h-[280px]" /> : <RankingBarChart data={charts.departmentUsage || []} />}
+          {isLoading ? <div className="skeleton h-[200px]" /> : <RankingBarChart data={charts.departmentUsage || []} height={200} />}
         </Card>
 
         <Card title="Copy status">
-          {isLoading ? <div className="skeleton h-[280px]" /> : (
+          {isLoading ? <div className="skeleton h-[200px]" /> : (
             <CategoryDonut
               data={(charts.copyStatusDistribution || []).map((entry) => ({ name: humanize(entry.status), count: entry.count }))}
+              height={200}
             />
           )}
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
         <Card title="Most borrowed titles" noPadding>
           <ul className="divide-y divide-line">
             {(lists.mostBorrowed || []).map((resource) => (
-              <li key={resource._id || resource.id} className="flex items-center justify-between gap-3 px-5 py-3">
+              <li key={resource._id || resource.id} className="flex items-center justify-between gap-3 px-4 py-2">
                 <div className="min-w-0">
                   <Link to={`/catalog/${resource._id || resource.id}`} className="block truncate text-sm font-medium text-slate-800 hover:text-brand-600">
                     {resource.title}
@@ -100,7 +101,7 @@ export default function AdminDashboard() {
               </li>
             ))}
             {!isLoading && !(lists.mostBorrowed || []).length && (
-              <li className="px-5 py-8 text-center text-sm text-slate-500">No loans recorded yet.</li>
+              <li className="px-4 py-5 text-center text-sm text-slate-500">No loans recorded yet.</li>
             )}
           </ul>
         </Card>
@@ -108,7 +109,7 @@ export default function AdminDashboard() {
         <Card title="Recently added to the catalogue" noPadding>
           <ul className="divide-y divide-line">
             {(lists.recentlyAdded || []).map((resource) => (
-              <li key={resource._id || resource.id} className="flex items-center justify-between gap-3 px-5 py-3">
+              <li key={resource._id || resource.id} className="flex items-center justify-between gap-3 px-4 py-2">
                 <div className="min-w-0">
                   <Link to={`/catalog/${resource._id || resource.id}`} className="block truncate text-sm font-medium text-slate-800 hover:text-brand-600">
                     {resource.title}
@@ -121,7 +122,7 @@ export default function AdminDashboard() {
               </li>
             ))}
             {!isLoading && !(lists.recentlyAdded || []).length && (
-              <li className="px-5 py-8 text-center text-sm text-slate-500">Nothing catalogued yet.</li>
+              <li className="px-4 py-5 text-center text-sm text-slate-500">Nothing catalogued yet.</li>
             )}
           </ul>
         </Card>

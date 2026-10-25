@@ -9,7 +9,7 @@ import {
 import { reportApi } from '../../api/endpoints';
 import { useAuthStore } from '../../store/auth';
 import useFinesEnabled from '../../hooks/useFinesEnabled';
-import { CirculationLineChart, DailyBarChart, RankingBarChart } from '../../components/charts/Charts';
+import { DailyBarChart, RankingBarChart } from '../../components/charts/Charts';
 import { formatMoney, formatNumber } from '../../utils/format';
 
 const GROUP_LABELS = {

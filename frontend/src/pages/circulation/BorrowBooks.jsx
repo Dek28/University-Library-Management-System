@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, BookOpen, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { BookOpen, CheckCircle2, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import {
@@ -110,7 +110,8 @@ export default function BorrowBooks() {
     <>
       <PageHeader
         title="Borrow Books"
-        breadcrumbs={[{ label: 'Circulation', to: '/circulation' }, { label: 'Borrow' }]}        actions={<Button variant="secondary" onClick={resetAll}>Start over</Button>}
+        breadcrumbs={[{ label: 'Circulation', to: '/circulation' }, { label: 'Borrow' }]}
+        actions={<Button variant="secondary" onClick={resetAll}>Start over</Button>}
       />
 
       {/* One column: the numbered steps explain themselves, so there is no side panel. */}

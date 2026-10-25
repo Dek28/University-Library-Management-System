@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const ApiError = require('../utils/ApiError');
@@ -16,6 +17,28 @@ const PROFILE_POPULATE = [
 ];
 
 const loadProfile = (userId) => User.findById(userId).populate(PROFILE_POPULATE);
+
+/**
+ * A failed sign-in must take as long for an unknown account as for a real one,
+ * otherwise response time reveals which identifiers exist.
+ */
+let decoyHash;
+async function spendComparisonTime(password) {
+  decoyHash = decoyHash || await bcrypt.hash('decoy-password', env.security.bcryptRounds);
+  await bcrypt.compare(password, decoyHash);
+}
+
+/**
+ * What goes into the audit log for an unrecognised sign-in name. People
+ * sometimes type their password into the identifier field, so the value is
+ * masked rather than stored.
+ */
+function maskIdentifier(identifier) {
+  const value = String(identifier || '');
+  const [local, domain] = value.includes('@') ? value.split('@') : [value, null];
+  const masked = `${local.slice(0, 2)}***`;
+  return domain ? `${masked}@${domain}` : `${masked} (${value.length} characters)`;
+}
 
 /** Public shape of the signed-in user, including the effective permission set. */
 function toSession(user) {
@@ -39,9 +62,10 @@ async function login({ identifier, password }, context = {}) {
   const invalid = ApiError.unauthorized('Invalid credentials');
 
   if (!user) {
+    await spendComparisonTime(password);
     await auditService.record({
       ...context, action: 'login_failed', status: 'failure',
-      entityType: 'User', description: `Unknown identifier: ${identifier}`,
+      entityType: 'User', description: `Unknown identifier: ${maskIdentifier(identifier)}`,
     });
     throw invalid;
   }
@@ -59,6 +83,7 @@ async function login({ identifier, password }, context = {}) {
     if (user.failedLoginAttempts >= maxAttempts) {
       user.lockedUntil = new Date(Date.now() + env.security.lockMinutes * 60_000);
       user.failedLoginAttempts = 0;
+      logger.warn(`Account locked after repeated failed sign-ins (user ${user._id}, ip ${context.req?.clientIp || 'unknown'})`);
     }
     await user.save({ validateBeforeSave: false });
     await auditService.record({
@@ -101,6 +126,7 @@ async function refresh(refreshToken, context = {}) {
   const found = await tokenService.findActiveRefreshToken(refreshToken);
   if (!found) throw ApiError.unauthorized('Session expired. Please sign in again.');
   if (found.reused) {
+    logger.warn(`Refresh token reuse detected; all sessions revoked (user ${found.doc.user}, ip ${context.req?.clientIp || 'unknown'})`);
     await tokenService.revokeAllForUser(found.doc.user, 'refresh token reuse detected');
     throw ApiError.unauthorized('Session revoked. Please sign in again.');
   }
@@ -162,14 +188,22 @@ async function requestPasswordReset(email, context = {}) {
   await user.save({ validateBeforeSave: false });
 
   const resetUrl = `${env.frontendUrl}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
-  logger.info(`Password reset requested for ${user.email}. Reset link: ${resetUrl}`);
+  // Without a mail transport the link can only be shown in development; anywhere
+  // else it must never reach the logs, where it would grant account access.
+  logger.info(env.exposeDevSecrets
+    ? `Password reset requested for ${user.email}. Reset link: ${resetUrl}`
+    : 'Password reset requested');
 
   await auditService.record({
     ...context, actor: user, action: 'password_reset', entityType: 'User', entityId: user._id,
     description: 'Password reset requested',
   });
 
-  return { delivered: true, devToken: env.isProd ? undefined : token, resetUrl: env.isProd ? undefined : resetUrl };
+  return {
+    delivered: true,
+    devToken: env.exposeDevSecrets ? token : undefined,
+    resetUrl: env.exposeDevSecrets ? resetUrl : undefined,
+  };
 }
 
 async function resetPassword({ token, email, newPassword }, context = {}) {
@@ -185,7 +219,6 @@ async function resetPassword({ token, email, newPassword }, context = {}) {
   user.passwordResetTokenHash = null;
   user.passwordResetExpiresAt = null;
   user.mustChangePassword = false;
-  if (user.status === 'inactive') user.status = 'active';
   await user.save();
 
   await tokenService.revokeAllForUser(user._id, 'password reset');

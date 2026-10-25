@@ -202,7 +202,7 @@ export default function CatalogImport() {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
-          {/* -------------------------------------------------- Step 1 */}
+          {/* Step 1 */}
           <Card title="1. Upload the spreadsheet">
             {file ? (
               <div className="flex items-center gap-3 rounded-lg border border-line bg-slate-50 px-4 py-3">
@@ -222,7 +222,7 @@ export default function CatalogImport() {
             )}
           </Card>
 
-          {/* -------------------------------------------------- Step 2 */}
+          {/* Step 2 */}
           {inspection && (
             <Card
               title="2. Match columns to the catalogue form"
@@ -281,7 +281,7 @@ export default function CatalogImport() {
             </Card>
           )}
 
-          {/* -------------------------------------------------- Step 3 */}
+          {/* Step 3 */}
           {inspection && (
             <Card title="3. Validate and import">
               <Checkbox
@@ -303,7 +303,7 @@ export default function CatalogImport() {
             </Card>
           )}
 
-          {/* -------------------------------------------------- Result */}
+          {/* Result */}
           {result && (
             <Card title={result.dryRun ? 'Validation result' : 'Import result'}>
               <div className="grid gap-3 sm:grid-cols-4">
@@ -373,7 +373,7 @@ export default function CatalogImport() {
           )}
         </div>
 
-        {/* -------------------------------------------------- Help */}
+        {/* Help */}
         <div className="space-y-4">
           <Card title="Use the template (optional)">
             <p className="text-sm text-slate-600">

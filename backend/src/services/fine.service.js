@@ -9,7 +9,7 @@ const userService = require('./user.service');
 const { buildPagination, paginate, compact, dateRange } = require('../utils/query');
 const { fineCode, paymentCode } = require('../utils/identifiers');
 const { daysOverdue } = require('../utils/datetime');
-const { inSession } = require('../utils/transaction');
+const { inSession, withTransaction } = require('../utils/transaction');
 
 const POPULATE = [
   { path: 'user', select: 'firstName lastName email registrationNumber employeeId' },
@@ -141,27 +141,34 @@ async function addPayment(fineId, { amount, method, reference, notes }, actor, c
     throw ApiError.badRequest(`Payment exceeds the outstanding balance of ${balance.toFixed(2)}`);
   }
 
-  const payment = await FinePayment.create({
-    receiptNumber: paymentCode(),
-    fine: fine._id,
-    user: fine.user,
-    amount: Number(amount.toFixed(2)),
-    kind: 'payment',
-    method: method || 'cash',
-    reference: reference || '',
-    notes: notes || '',
-    processedBy: actor._id,
-  });
-
-  fine.amountPaid = Number((fine.amountPaid + payment.amount).toFixed(2));
+  const paid = Number(amount.toFixed(2));
+  const amountPaidBefore = fine.amountPaid;
+  fine.amountPaid = Number((fine.amountPaid + paid).toFixed(2));
   fine.recalculateStatus();
-  await fine.save();
+
+  // The fine is saved first: if another request changed it in the meantime the
+  // save fails, and no receipt is written for a payment that did not count.
+  const payment = await withTransaction(async (session) => {
+    await fine.save(inSession(session));
+    const [created] = await FinePayment.create([{
+      receiptNumber: paymentCode(),
+      fine: fine._id,
+      user: fine.user,
+      amount: paid,
+      kind: 'payment',
+      method: method || 'cash',
+      reference: reference || '',
+      notes: notes || '',
+      processedBy: actor._id,
+    }], inSession(session));
+    return created;
+  });
 
   await userService.refreshUserCounters(fine.user);
   await auditService.record({
     ...context, actor, action: 'fine_paid', entityType: 'Fine', entityId: fine._id,
     entityLabel: fine.fineCode,
-    oldValue: { amountPaid: fine.amountPaid - payment.amount, status: 'outstanding' },
+    oldValue: { amountPaid: amountPaidBefore },
     newValue: { amountPaid: fine.amountPaid, status: fine.status, receipt: payment.receiptNumber },
   });
 
@@ -202,22 +209,24 @@ async function waive(fineId, { amount, reason }, actor, context = {}) {
 
   const before = { amountWaived: fine.amountWaived, status: fine.status };
 
-  await FinePayment.create({
-    receiptNumber: paymentCode(),
-    fine: fine._id,
-    user: fine.user,
-    amount: waiveAmount,
-    kind: 'waiver',
-    method: 'internal',
-    notes: reason,
-    processedBy: actor._id,
-  });
-
   fine.amountWaived = Number((fine.amountWaived + waiveAmount).toFixed(2));
   fine.waivedBy = actor._id;
   fine.waiveReason = reason;
   fine.recalculateStatus();
-  await fine.save();
+
+  await withTransaction(async (session) => {
+    await fine.save(inSession(session));
+    await FinePayment.create([{
+      receiptNumber: paymentCode(),
+      fine: fine._id,
+      user: fine.user,
+      amount: waiveAmount,
+      kind: 'waiver',
+      method: 'internal',
+      notes: reason,
+      processedBy: actor._id,
+    }], inSession(session));
+  });
 
   await userService.refreshUserCounters(fine.user);
   await auditService.record({

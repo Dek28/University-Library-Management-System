@@ -22,7 +22,7 @@ export default function ForgotPassword() {
 
   if (sent) {
     return (
-      <div className="rounded-xl border border-line bg-panel p-8 text-center">
+      <div className="text-center">
         <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
           <MailCheck className="h-6 w-6" aria-hidden="true" />
         </span>
@@ -51,7 +51,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="rounded-xl border border-line bg-panel p-6 sm:p-8">
+    <div>
       <h1 className="text-xl font-semibold text-slate-900">Forgot your password?</h1>
       <p className="mt-1.5 text-sm text-slate-500">
         Enter the email address on your library account and we will send a reset link.

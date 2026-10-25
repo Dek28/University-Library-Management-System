@@ -27,10 +27,12 @@ export const userApi = {
   remove: (id) => api.delete(`/users/${id}`).then(unwrap),
   updateOwnProfile: (payload) => api.patch('/users/me/profile', payload).then(unwrap),
   downloadTemplate: () => downloadFile('/users/import/template', {}, 'student-import-template.xlsx'),
-  import: (file, params) => {
+  // Options go in the form body: a default password must not end up in a URL or access log.
+  import: (file, options) => {
     const form = new FormData();
     form.append('file', file);
-    return api.post('/users/import', form, { params }).then(unwrap);
+    Object.entries(options).forEach(([key, value]) => form.append(key, String(value)));
+    return api.post('/users/import', form).then(unwrap);
   },
   export: (params, format) => downloadFile('/users', { ...params, format }, `users.${format}`),
 };

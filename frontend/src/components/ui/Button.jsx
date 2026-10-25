@@ -53,6 +53,7 @@ export default function Button({
         SIZES[size],
         className,
       )}
+      type={Component === 'button' ? 'button' : undefined}
       disabled={Component === 'button' ? isDisabled : undefined}
       aria-busy={loading || undefined}
       {...props}

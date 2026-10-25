@@ -4,10 +4,21 @@ import { useQuery } from '@tanstack/react-query';
 import { Settings2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
-  PageHeader, Card, StatCard, DataTable, Pagination, Button, IconButton,
-  SearchInput, Select, StatusBadge, Modal, Input, Textarea, Tabs,
+  PageHeader,
+  Card,
+  StatCard,
+  DataTable,
+  Pagination,
+  Button,
+  IconButton,
+  SearchInput,
+  Select,
+  StatusBadge,
+  Modal,
+  Textarea,
+  Tabs,
 } from '../../components/ui';
-import { inventoryApi, referenceApi } from '../../api/endpoints';
+import { inventoryApi } from '../../api/endpoints';
 import useListQuery from '../../hooks/useListQuery';
 import { useAuthStore } from '../../store/auth';
 import { P, COPY_CONDITIONS } from '../../constants';

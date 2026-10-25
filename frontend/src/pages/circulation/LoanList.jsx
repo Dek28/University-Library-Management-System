@@ -3,8 +3,19 @@ import { Link, useSearchParams } from 'react-router';
 import { Eye, RefreshCw, PackageX, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
-  PageHeader, Card, DataTable, Pagination, Button, IconButton, SearchInput,
-  Select, StatusBadge, Badge, Tabs, ConfirmDialog, Modal, Textarea,
+  PageHeader,
+  Card,
+  DataTable,
+  Pagination,
+  Button,
+  IconButton,
+  SearchInput,
+  Select,
+  StatusBadge,
+  Tabs,
+  ConfirmDialog,
+  Modal,
+  Textarea,
 } from '../../components/ui';
 import { loanApi } from '../../api/endpoints';
 import useListQuery from '../../hooks/useListQuery';
@@ -203,7 +214,6 @@ export default function LoanList({ ownOnly = false, title = 'Circulation', defau
           </>
         )}
       />
-
 
       <Card noPadding>
         <Tabs tabs={TABS} value={tab} onChange={switchTab} className="px-2" />

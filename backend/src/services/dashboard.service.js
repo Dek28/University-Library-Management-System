@@ -2,9 +2,7 @@ const mongoose = require('mongoose');
 const Resource = require('../models/Resource');
 const ResourceCopy = require('../models/ResourceCopy');
 const Loan = require('../models/Loan');
-const Fine = require('../models/Fine');
 const User = require('../models/User');
-const Role = require('../models/Role');
 const Reservation = require('../models/Reservation');
 const DigitalResource = require('../models/DigitalResource');
 const Clearance = require('../models/Clearance');
@@ -13,6 +11,7 @@ const { ReadingGroup, ReadingGroupSession } = require('../models/readingGroup');
 const { startOfDay, endOfDay, addDays, dayjs } = require('../utils/datetime');
 const resourceService = require('./resource.service');
 const fineService = require('./fine.service');
+const settingsService = require('./settings.service');
 
 const oid = (id) => new mongoose.Types.ObjectId(String(id));
 
@@ -148,7 +147,7 @@ async function adminDashboard() {
   };
 }
 
-async function librarianDashboard(userId) {
+async function librarianDashboard() {
   const todayStart = startOfDay();
   const todayEnd = endOfDay();
 
@@ -193,8 +192,7 @@ async function librarianDashboard(userId) {
 }
 
 async function memberDashboard(userId) {
-  const settings = require('./settings.service');
-  const { circulation } = await settings.getSettings();
+  const { circulation } = await settingsService.getSettings();
   const dueSoonCutoff = addDays(new Date(), circulation.dueSoonReminderDays);
 
   const [activeLoans, dueSoon, overdue, reservations, outstanding, clearance, unread, recommendations] = await Promise.all([

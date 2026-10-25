@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /**
  * Renumbers every copy with a simple library-wide accession number
- * (000001, 000002, …) in the order the copies were registered.
+ * (000001, 000002, ...) in the order the copies were registered.
  *
  *   npm run accession:renumber -- --dry-run   show what would change, write nothing
  *   npm run accession:renumber                renumber

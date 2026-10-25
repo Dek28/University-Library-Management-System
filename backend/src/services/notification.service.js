@@ -44,7 +44,7 @@ async function notify({ user, type, title, message, severity = 'info', entityTyp
       entityType: entityType || null,
       entityId: entityId || null,
       link: link || null,
-      dedupeKey: dedupeKey || null,
+      dedupeKey: dedupeKey || undefined,
       channels: [{ channel: 'in_app', status: 'sent', sentAt: new Date() }],
     });
 

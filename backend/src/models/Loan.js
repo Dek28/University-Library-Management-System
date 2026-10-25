@@ -38,7 +38,7 @@ const loanSchema = new Schema(
     notes: { type: String, trim: true, default: '' },
     returnNotes: { type: String, trim: true, default: '' },
   },
-  { timestamps: true },
+  { timestamps: true, optimisticConcurrency: true },
 );
 
 loanSchema.plugin(toJSONPlugin);

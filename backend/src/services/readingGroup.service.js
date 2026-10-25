@@ -289,9 +289,16 @@ async function cancelSession(id, reason, actor, context = {}) {
   return ReadingGroupSession.findById(id).populate(SESSION_POPULATE);
 }
 
-async function listSessions(query = {}) {
+/** `memberId` limits the result to sessions of groups that member belongs to. */
+async function listSessions(query = {}, { memberId } = {}) {
   const pagination = buildPagination(query, { defaultSort: 'startsAt', defaultLimit: 50 });
   const filter = compact({ group: query.group, space: query.space, status: query.status });
+
+  if (memberId) {
+    const groupIds = (await ReadingGroup.find({ members: memberId }).distinct('_id')).map(String);
+    const requested = query.group ? String(query.group) : null;
+    filter.group = requested && !groupIds.includes(requested) ? { $in: [] } : { $in: requested ? [requested] : groupIds };
+  }
 
   if (query.date) {
     filter.startsAt = { $gte: startOfDay(query.date), $lte: endOfDay(query.date) };
@@ -304,12 +311,15 @@ async function listSessions(query = {}) {
   return paginate(ReadingGroupSession, filter, pagination, { populate: SESSION_POPULATE });
 }
 
-async function getSession(id) {
+async function getSession(id, { memberId } = {}) {
   const session = await ReadingGroupSession.findById(id).populate([
     ...SESSION_POPULATE,
     { path: 'group', populate: { path: 'members', select: 'firstName lastName registrationNumber' } },
   ]);
   if (!session) throw ApiError.notFound('Session not found');
+  if (memberId && !(session.group?.members || []).some((m) => String(m._id || m) === String(memberId))) {
+    throw ApiError.forbidden();
+  }
   const attendance = await ReadingGroupAttendance.find({ session: id })
     .populate('user', 'firstName lastName registrationNumber')
     .lean();

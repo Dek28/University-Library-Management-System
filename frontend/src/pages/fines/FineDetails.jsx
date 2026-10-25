@@ -8,7 +8,11 @@ import {
 import { fineApi } from '../../api/endpoints';
 import { useAuthStore } from '../../store/auth';
 import {
-  formatMoney, formatDate, formatDateTime, fullName, memberIdentifier, humanize,
+  formatMoney,
+  formatDateTime,
+  fullName,
+  memberIdentifier,
+  humanize,
 } from '../../utils/format';
 
 export default function FineDetails() {

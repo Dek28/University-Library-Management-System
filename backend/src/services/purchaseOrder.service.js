@@ -126,16 +126,30 @@ async function update(id, payload, actor, context = {}) {
   return getById(id);
 }
 
-async function place(id, actor, context = {}) {
-  const order = await PurchaseOrder.findById(id);
-  if (!order) throw ApiError.notFound('Purchase order not found');
-  if (order.status !== 'draft') throw ApiError.conflict(`This order is already ${order.status.replace('_', ' ')}`);
+/**
+ * Moves an order out of the state described by `from` in one guarded update,
+ * so two requests racing on the same order cannot both succeed.
+ */
+async function transition(id, from, changes, describeConflict) {
+  const result = await PurchaseOrder.updateOne({ _id: id, ...from }, { $set: changes }, { runValidators: true });
+  if (result.matchedCount) return;
+  const current = await PurchaseOrder.findById(id).select('status paymentStatus');
+  if (!current) throw ApiError.notFound('Purchase order not found');
+  throw ApiError.conflict(describeConflict(current));
+}
 
-  order.status = 'ordered';
-  order.orderedAt = new Date();
-  order.invoiceNumber = order.invoiceNumber || invoiceCode();
-  order.updatedBy = actor._id;
-  await order.save();
+async function place(id, actor, context = {}) {
+  const order = await PurchaseOrder.findById(id).select('orderCode supplier invoiceNumber');
+  if (!order) throw ApiError.notFound('Purchase order not found');
+
+  await transition(
+    id,
+    { status: 'draft' },
+    {
+      status: 'ordered', orderedAt: new Date(), invoiceNumber: order.invoiceNumber || invoiceCode(), updatedBy: actor._id,
+    },
+    (current) => `This order is already ${current.status.replace('_', ' ')}`,
+  );
 
   await auditService.record({
     ...context, actor, action: 'purchase_order_placed', entityType: 'PurchaseOrder', entityId: order._id,
@@ -203,6 +217,7 @@ async function receive(id, { lines }, actor, context = {}) {
   }
 
   const summaryLines = [];
+  const receipts = [];
   for (const line of lines) {
     const item = order.items.id(line.item);
     if (!item) throw ApiError.badRequest('A received line does not belong to this order');
@@ -218,60 +233,88 @@ async function receive(id, { lines }, actor, context = {}) {
       if (!shelf) throw ApiError.badRequest('The selected shelf does not exist');
     }
 
+    // Claim the quantity before creating any copies. The update only matches
+    // while the line still has the received count read above, so a duplicate
+    // or simultaneous delivery loses here.
     // eslint-disable-next-line no-await-in-loop
-    const resourceId = await resolveResource(item, shelfId, actor);
-    // eslint-disable-next-line no-await-in-loop
-    await copyService.createBatch(
+    const claim = await PurchaseOrder.updateOne(
       {
-        resource: resourceId,
-        quantity,
-        shelf: shelfId || undefined,
-        price: item.unitPrice || 0,
-        replacementCost: item.unitPrice || 0,
+        _id: id,
+        status: { $in: ['ordered', 'partially_received'] },
+        items: { $elemMatch: { _id: item._id, receivedQuantity: item.receivedQuantity } },
       },
-      actor,
-      context,
+      { $inc: { 'items.$.receivedQuantity': quantity } },
     );
+    if (!claim.matchedCount) {
+      throw ApiError.conflict('This order was changed by someone else while receiving. Reload it and try again.');
+    }
 
-    item.resource = resourceId;
-    item.receivedQuantity += quantity;
-    order.receipts.push({
-      item: item._id, title: item.title, quantity, shelf: shelfId, receivedBy: actor._id,
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const resourceId = await resolveResource(item, shelfId, actor);
+      // eslint-disable-next-line no-await-in-loop
+      await copyService.createBatch(
+        {
+          resource: resourceId,
+          quantity,
+          shelf: shelfId || undefined,
+          price: item.unitPrice || 0,
+          replacementCost: item.unitPrice || 0,
+        },
+        actor,
+        context,
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await PurchaseOrder.updateOne(
+        { _id: id },
+        { $set: { 'items.$[line].resource': resourceId } },
+        { arrayFilters: [{ 'line._id': item._id }] },
+      );
+    } catch (err) {
+      // Hand the claimed quantity back so the line can be received again.
+      // eslint-disable-next-line no-await-in-loop
+      await PurchaseOrder.updateOne({ _id: id, 'items._id': item._id }, { $inc: { 'items.$.receivedQuantity': -quantity } });
+      throw err;
+    }
+
+    receipts.push({
+      item: item._id, title: item.title, quantity, shelf: shelfId, receivedBy: actor._id, receivedAt: new Date(),
     });
     summaryLines.push({ title: item.title, quantity });
   }
 
   if (!summaryLines.length) throw ApiError.badRequest('Nothing to receive: every line is already fully received');
 
-  const complete = order.items.every((i) => i.receivedQuantity >= i.quantity);
-  order.status = complete ? 'received' : 'partially_received';
-  if (complete) order.receivedAt = new Date();
-  order.updatedBy = actor._id;
-  await order.save();
+  const stored = await PurchaseOrder.findById(id).select('items');
+  const complete = stored.items.every((i) => i.receivedQuantity >= i.quantity);
+  const changes = { status: complete ? 'received' : 'partially_received', updatedBy: actor._id };
+  if (complete) changes.receivedAt = new Date();
+  await PurchaseOrder.updateOne({ _id: id }, { $set: changes, $push: { receipts: { $each: receipts } } });
 
   await auditService.record({
     ...context, actor, action: 'purchase_order_received', entityType: 'PurchaseOrder', entityId: order._id,
     entityLabel: order.orderCode,
     description: `Received ${summaryLines.reduce((s, l) => s + l.quantity, 0)} copy/copies`,
-    newValue: { status: order.status, lines: summaryLines },
+    newValue: { status: changes.status, lines: summaryLines },
   });
 
   return { order: await getById(id), received: summaryLines };
 }
 
 async function cancel(id, reason, actor, context = {}) {
-  const order = await PurchaseOrder.findById(id);
+  const order = await PurchaseOrder.findById(id).select('orderCode');
   if (!order) throw ApiError.notFound('Purchase order not found');
-  if (!['draft', 'ordered'].includes(order.status)) {
-    throw ApiError.conflict('Only a draft or an order with nothing received can be cancelled');
-  }
-  if (order.paymentStatus === 'paid') throw ApiError.conflict('A paid order cannot be cancelled');
 
-  order.status = 'cancelled';
-  order.cancelledAt = new Date();
-  order.cancelReason = reason || '';
-  order.updatedBy = actor._id;
-  await order.save();
+  await transition(
+    id,
+    { status: { $in: ['draft', 'ordered'] }, paymentStatus: { $ne: 'paid' } },
+    {
+      status: 'cancelled', cancelledAt: new Date(), cancelReason: reason || '', updatedBy: actor._id,
+    },
+    (current) => (current.paymentStatus === 'paid'
+      ? 'A paid order cannot be cancelled'
+      : 'Only a draft or an order with nothing received can be cancelled'),
+  );
 
   await auditService.record({
     ...context, actor, action: 'purchase_order_cancelled', entityType: 'PurchaseOrder', entityId: order._id,
@@ -282,22 +325,25 @@ async function cancel(id, reason, actor, context = {}) {
 
 /** Settles the supplier's invoice in full. The invoice then prints as a paid receipt. */
 async function recordPayment(id, { method, reference, paidAt }, actor, context = {}) {
-  const order = await PurchaseOrder.findById(id);
+  const order = await PurchaseOrder.findById(id).select('orderCode invoiceNumber totalAmount');
   if (!order) throw ApiError.notFound('Purchase order not found');
-  if (['draft', 'cancelled'].includes(order.status)) {
-    throw ApiError.conflict(order.status === 'draft'
-      ? 'Place the order before recording a payment'
-      : 'A cancelled order cannot be paid');
-  }
-  if (order.paymentStatus === 'paid') throw ApiError.conflict('This invoice is already paid');
 
-  order.paymentStatus = 'paid';
-  order.paymentMethod = method;
-  order.paymentReference = reference || '';
-  order.paidAt = paidAt || new Date();
-  order.paidBy = actor._id;
-  order.updatedBy = actor._id;
-  await order.save();
+  await transition(
+    id,
+    { status: { $nin: ['draft', 'cancelled'] }, paymentStatus: { $ne: 'paid' } },
+    {
+      paymentStatus: 'paid',
+      paymentMethod: method,
+      paymentReference: reference || '',
+      paidAt: paidAt || new Date(),
+      paidBy: actor._id,
+      updatedBy: actor._id,
+    },
+    (current) => {
+      if (current.paymentStatus === 'paid') return 'This invoice is already paid';
+      return current.status === 'draft' ? 'Place the order before recording a payment' : 'A cancelled order cannot be paid';
+    },
+  );
 
   await auditService.record({
     ...context, actor, action: 'purchase_order_paid', entityType: 'PurchaseOrder', entityId: order._id,

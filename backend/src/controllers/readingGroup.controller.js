@@ -36,13 +36,16 @@ const removeGroup = catchAsync(async (req, res) => {
   return ok(res, { message: 'Reading group deleted' });
 });
 
+/** Members without the group view permission see only sessions of their own groups. */
+const ownGroupsOnly = (req) => (has(req, P.GROUP_VIEW) ? {} : { memberId: req.user._id });
+
 const listSessions = catchAsync(async (req, res) => {
-  const result = await groupService.listSessions(req.query);
+  const result = await groupService.listSessions(req.query, ownGroupsOnly(req));
   return paginated(res, { items: result.items, page: result.page, limit: result.limit, total: result.total });
 });
 
 const getSession = catchAsync(async (req, res) =>
-  ok(res, { message: 'Session loaded', data: await groupService.getSession(req.params.id) }));
+  ok(res, { message: 'Session loaded', data: await groupService.getSession(req.params.id, ownGroupsOnly(req)) }));
 
 const scheduleSession = catchAsync(async (req, res) =>
   created(res, { message: 'Session scheduled', data: await groupService.scheduleSession(req.body, req.user, { req }) }));

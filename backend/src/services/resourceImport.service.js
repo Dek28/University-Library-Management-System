@@ -80,7 +80,7 @@ const FIELDS = [
 const FIELD_KEYS = FIELDS.map((f) => f.key);
 
 /** "Year Published", "year_published" and "YEAR-PUBLISHED" all become "yearpublished". */
-const norm = (value) => String(value || '').replace(/^﻿/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const norm = (value) => String(value || '').replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const HEADER_INDEX = (() => {
   const index = new Map();
@@ -92,7 +92,7 @@ const HEADER_INDEX = (() => {
   return index;
 })();
 
-// ----------------------------------------------------------------- values
+// Values
 
 const RESOURCE_TYPE_ALIASES = {
   textbook: 'book', books: 'book', monograph: 'book', novel: 'book',
@@ -158,7 +158,7 @@ function parseBoolean(raw, fallback) {
 const splitList = (value) => String(value || '').split(/[;|\n]/).map((s) => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
 const normIsbn = (value) => String(value || '').replace(/[^0-9Xx]/g, '').toUpperCase();
 
-// -------------------------------------------------------------- workbook
+// Workbook
 
 function cellText(cell) {
   let { value } = cell;
@@ -169,7 +169,7 @@ function cellText(cell) {
     else if (value.error) value = '';
   }
   if (value instanceof Date) value = value.toISOString().slice(0, 10);
-  return value === null || value === undefined ? '' : String(value).replace(/^﻿/, '').trim();
+  return value === null || value === undefined ? '' : String(value).replace(/^\uFEFF/, '').trim();
 }
 
 async function loadSheet(buffer, filename = '') {
@@ -267,7 +267,7 @@ async function inspect(buffer, filename) {
   };
 }
 
-// --------------------------------------------------------------- template
+// Template
 
 const TEMPLATE_EXAMPLE = {
   title: 'Introduction to Algorithms',
@@ -396,7 +396,7 @@ async function buildTemplate() {
   return workbook;
 }
 
-// ----------------------------------------------------------------- import
+// Import
 
 /** Case/punctuation-insensitive lookup over reference records by name (and code). */
 function lookup(records, ...fields) {

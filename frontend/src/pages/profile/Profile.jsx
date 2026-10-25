@@ -13,7 +13,7 @@ import { useAuthStore } from '../../store/auth';
 import useFinesEnabled from '../../hooks/useFinesEnabled';
 import { changePasswordSchema } from '../../validators/schemas';
 import { GENDERS } from '../../constants';
-import { formatDate, formatDateTime, formatMoney, fullName, memberIdentifier, humanize } from '../../utils/format';
+import { formatDateTime, formatMoney, fullName, memberIdentifier, humanize } from '../../utils/format';
 
 export default function Profile() {
   const [params, setParams] = useSearchParams();
@@ -124,8 +124,8 @@ export default function Profile() {
         onChange={setTab}
       />
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <Card className="xl:col-span-1">
+      <div className="grid gap-4 lg:w-2/3 xl:grid-cols-[15rem_minmax(0,1fr)]">
+        <Card>
           <div className="flex flex-col items-center text-center">
             <Avatar user={user} size="xl" />
             <p className="mt-3 text-md font-semibold text-slate-900">{fullName(user)}</p>
@@ -136,7 +136,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <dl className="mt-5 divide-y divide-line border-t border-line pt-2">
+          <dl className="mt-5 divide-y divide-line border-t border-line pt-2 xl:[&>div]:flex-col xl:[&>div]:gap-0.5 xl:[&_dt]:w-auto">
             <DetailRow label="Email">{user.email}</DetailRow>
             <DetailRow label="Faculty">{user.faculty?.name || '-'}</DetailRow>
             <DetailRow label="Department">{user.department?.name || '-'}</DetailRow>
@@ -155,7 +155,7 @@ export default function Profile() {
           )}
         </Card>
 
-        <div className="xl:col-span-2">
+        <div className="min-w-0">
           {tab === 'profile' && (
             <Card title="Editable details" subtitle="Ask the library to change anything not shown here.">
               <form onSubmit={profileForm.handleSubmit(saveProfile)} className="space-y-4" noValidate>
@@ -229,7 +229,7 @@ export default function Profile() {
 
           {tab === 'access' && (
             <Card title="What your account can do" subtitle={`${permissions.length} permission(s) granted through the ${user.role?.name} role`}>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
                 {permissions.map((permission) => (
                   <div key={permission} className="flex items-center gap-2 rounded-md border border-line px-3 py-2">
                     <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />

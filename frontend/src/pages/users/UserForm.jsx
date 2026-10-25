@@ -11,7 +11,7 @@ import {
 import { userApi, adminApi, referenceApi } from '../../api/endpoints';
 import { userSchema, createUserSchema } from '../../validators/schemas';
 import { GENDERS } from '../../constants';
-import { cleanParams, formatInputDate } from '../../utils/format';
+import { cleanParams } from '../../utils/format';
 
 export default function UserForm() {
   const { id } = useParams();
@@ -99,21 +99,21 @@ export default function UserForm() {
         actions={<Button as={Link} to={isEdit ? `/users/${id}` : '/users'} variant="secondary">Cancel</Button>}
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-4 lg:w-2/3" noValidate>
         <Card title="Personal details">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Input label="First name" required error={errors.firstName?.message} {...register('firstName')} />
             <Input label="Middle name" error={errors.middleName?.message} {...register('middleName')} />
             <Input label="Last name" required error={errors.lastName?.message} {...register('lastName')} />
             <Input label="Email address" type="email" required error={errors.email?.message} {...register('email')} />
             <Input label="Phone" error={errors.phone?.message} {...register('phone')} />
             <Select label="Gender" options={GENDERS} {...register('gender')} />
-            <Input label="Address" wrapperClassName="sm:col-span-2 lg:col-span-3" error={errors.address?.message} {...register('address')} />
+            <Input label="Address" wrapperClassName="sm:col-span-2" error={errors.address?.message} {...register('address')} />
           </div>
         </Card>
 
         <Card title="Library account">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Select
               label="Role"
               required
@@ -140,7 +140,7 @@ export default function UserForm() {
               <PasswordInput
                 label="Initial password"
                 required
-                wrapperClassName="sm:col-span-2 lg:col-span-3"
+                wrapperClassName="sm:col-span-2"
                 hint="At least 8 characters, with an uppercase letter, a lowercase letter and a number."
                 error={errors.password?.message}
                 {...register('password')}
@@ -150,7 +150,7 @@ export default function UserForm() {
         </Card>
 
         <Card title="Academic details">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Select label="Faculty" placeholder="Not assigned" options={asOptions(options?.faculties)} {...register('faculty')} />
             <Select label="Department" placeholder="Not assigned" options={asOptions(options?.departments)} {...register('department')} />
             {isStudent && (

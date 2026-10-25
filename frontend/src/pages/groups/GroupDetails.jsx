@@ -3,13 +3,22 @@ import { Link, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-  PageHeader, Card, Button, DetailRow, StatusBadge, Badge, DataTable,
-  PageLoader, ErrorState, Avatar, Modal, ConfirmDialog,
+  PageHeader,
+  Card,
+  Button,
+  DetailRow,
+  StatusBadge,
+  Badge,
+  DataTable,
+  PageLoader,
+  ErrorState,
+  Avatar,
+  ConfirmDialog,
 } from '../../components/ui';
 import { groupApi } from '../../api/endpoints';
 import { useAuthStore } from '../../store/auth';
 import { P } from '../../constants';
-import { formatDate, fullName, memberIdentifier, humanize } from '../../utils/format';
+import { formatDate, fullName, memberIdentifier } from '../../utils/format';
 import GroupForm from './GroupForm';
 import SessionForm from './SessionForm';
 import AttendanceDialog from './AttendanceDialog';

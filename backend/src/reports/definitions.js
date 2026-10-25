@@ -94,7 +94,7 @@ const loadCopies = (filter) =>
     .lean();
 
 const definitions = {
-  // ---------------------------------------------------------------- Circulation
+  // Circulation
   'circulation-issued': {
     title: 'Items Issued',
     group: 'circulation',
@@ -207,7 +207,7 @@ const definitions = {
     },
   },
 
-  // ------------------------------------------------------------------ Resources
+  // Resources
   'resources-available': {
     title: 'Available Copies',
     group: 'resources',
@@ -366,7 +366,7 @@ const definitions = {
     },
   },
 
-  // ---------------------------------------------------------------------- Users
+  // Users
   'users-active': {
     title: 'Active Members',
     group: 'users',
@@ -479,7 +479,7 @@ const definitions = {
     },
   },
 
-  // -------------------------------------------------------------------- Finance
+  // Finance
   'fines-outstanding': {
     title: 'Outstanding Fines',
     group: 'fines',
@@ -575,7 +575,7 @@ const definitions = {
     },
   },
 
-  // ------------------------------------------------------------------ Clearance
+  // Clearance
   'clearance-register': {
     title: 'Clearance Register',
     group: 'clearance',
@@ -609,7 +609,7 @@ const definitions = {
     },
   },
 
-  // -------------------------------------------------------------- Reading groups
+  // Reading groups
   'groups-sessions': {
     title: 'Reading Group Sessions',
     group: 'reading-groups',

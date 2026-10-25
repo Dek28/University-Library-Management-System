@@ -1,7 +1,7 @@
 const request = require('supertest');
 const {
   app, api, as, PASSWORD, ensureRoles, ensureSettings,
-  createUser, createAndSignIn, resetDatabase, models,
+  createUser, createAndSignIn, resetDatabase,
 } = require('../helpers');
 
 describe('Authentication and authorization', () => {
@@ -118,7 +118,7 @@ describe('Authentication and authorization', () => {
     });
 
     it('invalidates existing access tokens when the password changes', async () => {
-      const { user, token } = await createAndSignIn('student');
+      const { token } = await createAndSignIn('student');
 
       const before = await as(token).get('/auth/me');
       expect(before.status).toBe(200);

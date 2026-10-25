@@ -11,7 +11,7 @@ import { groupApi, referenceApi } from '../../api/endpoints';
 import useListQuery from '../../hooks/useListQuery';
 import { useAuthStore } from '../../store/auth';
 import { P, GROUP_STATUSES } from '../../constants';
-import { fullName, formatDate } from '../../utils/format';
+import { fullName } from '../../utils/format';
 import GroupForm from './GroupForm';
 
 export default function ReadingGroups() {

@@ -1,7 +1,8 @@
 import clsx from 'clsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { PAGE_SIZES } from '../../constants';
 
-/** Page numbers with ellipses, e.g. 1 2 3 … 12 */
+/** Page numbers with ellipses, e.g. 1 2 3 ... 12 */
 function pageWindow(current, total) {
   if (total <= 7) return Array.from({ length: total }, (unused, i) => i + 1);
   if (current <= 4) return [1, 2, 3, 4, 5, '…', total];
@@ -31,7 +32,7 @@ export default function Pagination({ page = 1, limit = 20, total = 0, onPageChan
               onChange={(e) => onLimitChange(Number(e.target.value))}
               className="h-8 rounded-lg border border-line-strong bg-panel px-2 text-xs text-slate-700 transition focus:border-brand-500 focus:outline-hidden focus:ring-4 focus:ring-brand-500/15"
             >
-              {[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+              {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
           </label>
         )}

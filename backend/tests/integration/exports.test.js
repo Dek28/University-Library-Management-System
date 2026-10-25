@@ -1,11 +1,11 @@
 const {
-  as, ensureRoles, ensureSettings, createUser, createAndSignIn,
+  as, ensureRoles, ensureSettings, createAndSignIn,
   resetDatabase, models,
 } = require('../helpers');
 const { EXPORT_MAX_ROWS } = require('../../src/utils/query');
 const { generateBarcode } = require('../../src/utils/identifiers');
 
-const { User, Role } = models;
+const { User } = models;
 
 /** Comfortably past the 200-row interactive page cap. */
 const COHORT = 260;
@@ -44,7 +44,7 @@ describe('Exports', () => {
 
   /** Splits a CSV body into data rows, ignoring the header and BOM. */
   const csvRows = (body) => String(body)
-    .replace(/^﻿/, '')
+    .replace(/^\uFEFF/, '')
     .trim()
     .split('\n')
     .slice(1);

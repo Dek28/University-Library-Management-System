@@ -52,7 +52,7 @@ async function getFinePolicy(resourceType) {
     || DEFAULT_FINE_POLICIES[0];
 }
 
-/** Whether the library charges fines at all (Settings → Circulation). */
+/** Whether the library charges fines at all (Settings > Circulation). */
 async function finesEnabled() {
   const settings = await getSettings();
   return settings.circulation?.finesEnabled !== false;

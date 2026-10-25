@@ -3,7 +3,7 @@ import { NavLink } from 'react-router';
 import clsx from 'clsx';
 import {
   LayoutDashboard,
-  Library,
+  LibraryBig,
   RefreshCw,
   CloudDownload,
   Boxes,
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 import { useAuthStore } from '../store/auth';
-import { P } from '../constants';
+import { P, BRAND } from '../constants';
 import useFinesEnabled from '../hooks/useFinesEnabled';
 
 /**
@@ -36,12 +36,12 @@ const NAV_SECTIONS = [
     items: [{ to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
   },
 
-  // ------------------------------------------------------------------ Staff
+  // Staff
   {
     title: 'Catalogue',
     audience: 'staff',
     items: [
-      { to: '/catalog', label: 'Catalog', icon: Library, any: [P.RESOURCE_VIEW] },
+      { to: '/catalog', label: 'Catalog', icon: LibraryBig, any: [P.RESOURCE_VIEW] },
       { to: '/digital-library', label: 'Digital Library', icon: CloudDownload, any: [P.DIGITAL_VIEW] },
       { to: '/inventory', label: 'Inventory', icon: Boxes, any: [P.INVENTORY_VIEW] },
       { to: '/orders', label: 'Book Orders', icon: ShoppingCart, any: [P.INVENTORY_VIEW] },
@@ -77,12 +77,12 @@ const NAV_SECTIONS = [
     ],
   },
 
-  // ---------------------------------------------------------------- Members
+  // Members
   {
     title: 'Library',
     audience: 'member',
     items: [
-      { to: '/catalog', label: 'Catalog', icon: Library, any: [P.RESOURCE_VIEW] },
+      { to: '/catalog', label: 'Catalog', icon: LibraryBig, any: [P.RESOURCE_VIEW] },
       { to: '/digital-library', label: 'Digital Library', icon: CloudDownload, any: [P.DIGITAL_VIEW] },
     ],
   },
@@ -102,7 +102,6 @@ const NAV_SECTIONS = [
 
 export default function Sidebar({ open, onClose }) {
   const permissions = useAuthStore((state) => state.permissions);
-  const settings = useAuthStore((state) => state.settings);
   const finesEnabled = useFinesEnabled();
 
   // Every account can *view* reference data (forms need it for their
@@ -144,19 +143,11 @@ export default function Sidebar({ open, onClose }) {
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-white/20 px-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
-              <Library className="h-5 w-5 text-white" />
-            </div>
+            <img src={BRAND.logo} alt="" className="h-10 w-10 shrink-0 rounded-full ring-2 ring-white/80" />
 
-            <div className="min-w-0">
-              <h1 className="text-base font-bold text-white">
-                ULMS
-              </h1>
-
-              <p className="truncate text-xs text-blue-200">
-                {settings?.institution?.libraryName || 'University Library'}
-              </p>
-            </div>
+            <h1 className="text-base font-bold leading-tight text-white">
+              {BRAND.name}
+            </h1>
           </div>
 
           <button

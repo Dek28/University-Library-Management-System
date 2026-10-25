@@ -12,16 +12,18 @@ const { daysOverdue } = require('../utils/datetime');
 async function run() {
   const { updated } = await circulationService.markOverdueLoans();
 
-  const overdue = await Loan.find({ status: 'overdue' })
-    .populate('resource', 'title')
-    .limit(2000)
-    .lean();
-
   const today = new Date().toISOString().slice(0, 10);
   const chargesFines = await settingsService.finesEnabled();
   let notified = 0;
+  let totalOverdue = 0;
+  const affected = new Set();
 
-  for (const loan of overdue) {
+  // A cursor walks every overdue loan; a fixed cap would leave the rest of
+  // the borrowers unnotified with no sign that anything was skipped.
+  const cursor = Loan.find({ status: 'overdue' }).populate('resource', 'title').lean().cursor();
+  for (let loan = await cursor.next(); loan; loan = await cursor.next()) {
+    totalOverdue += 1;
+    affected.add(String(loan.user));
     const days = daysOverdue(loan.dueDate);
     // eslint-disable-next-line no-await-in-loop
     const created = await notificationService.notify({
@@ -40,13 +42,12 @@ async function run() {
   }
 
   // Keep the per-member loan counters honest after status changes.
-  const affected = [...new Set(overdue.map((l) => String(l.user)))];
-  for (const userId of affected.slice(0, 500)) {
+  for (const userId of affected) {
     // eslint-disable-next-line no-await-in-loop
     await userService.refreshUserCounters(userId);
   }
 
-  return { markedOverdue: updated, notified, totalOverdue: overdue.length };
+  return { markedOverdue: updated, notified, totalOverdue };
 }
 
 module.exports = { run };

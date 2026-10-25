@@ -8,6 +8,8 @@
  * The super administrator password comes from SEED_ADMIN_PASSWORD; nothing is
  * hardcoded, and the account is flagged `mustChangePassword` outside development.
  */
+const fs = require('fs');
+const path = require('path');
 const mongoose = require('mongoose');
 const env = require('../config/env');
 const { connectDatabase, disconnectDatabase } = require('../config/database');
@@ -17,6 +19,7 @@ const { ROLE_DEFINITIONS, ROLE_KEYS } = require('../constants/permissions');
 const { generateBarcode, fineCode, groupCode, reservationCode } = require('../utils/identifiers');
 const { nextLoanCode, formatAccession, setAccessionCounter } = require('../services/sequence.service');
 const { addDays, endOfDay } = require('../utils/datetime');
+const storage = require('../services/storage');
 
 const {
   Role, User, Faculty, Department, Program, Category, Subject, Publisher,
@@ -47,14 +50,27 @@ async function seedRoles() {
   return roles;
 }
 
+/** Stores the institution logo (shown on printed orders and invoices) and returns its public URL. */
+async function seedLogo() {
+  try {
+    const file = path.join(__dirname, 'assets', 'sos-logo.png');
+    const saved = await storage.save(fs.readFileSync(file), { key: 'logos/institution.png', mimeType: 'image/png' });
+    return storage.publicUrl(saved.key);
+  } catch (err) {
+    console.warn(`  institution logo      skipped (${err.message})`);
+    return null;
+  }
+}
+
 async function seedSettings() {
   const existing = await SystemSetting.findOne({ key: 'global' });
   if (existing) return existing;
   const settings = await SystemSetting.create({
     ...SystemSetting.defaults(),
     institution: {
-      universityName: 'Example University',
-      libraryName: 'Main University Library',
+      universityName: 'SOS University',
+      libraryName: 'SOS University Library',
+      logoUrl: await seedLogo(),
       email: 'library@example.edu',
       phone: '+255 700 000 000',
       address: 'University Road, Campus',
@@ -355,7 +371,6 @@ async function seedCatalogue(admin, ref) {
 
 async function seedCirculation(staff, students, resources) {
   const librarian = staff.find((s) => s.employeeId === 'LIB001');
-  const fineService = require('../services/fine.service');
   const userService = require('../services/user.service');
   const resourceService = require('../services/resource.service');
 
@@ -565,6 +580,12 @@ async function run() {
       await seedReadingGroups(staff, students, ref);
       await seedDigital(staff, ref);
     }
+  }
+
+  if (env.isProd) {
+    console.log(`\nSuper administrator: ${env.seed.adminEmail}\n`);
+    await disconnectDatabase();
+    return;
   }
 
   console.log('\nDevelopment credentials');

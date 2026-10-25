@@ -6,18 +6,24 @@ const { imageUpload } = require('../../middleware/upload');
 const { uploadLimiter } = require('../../middleware/security');
 const { idParam, objectId, paginationQuery, dateRangeQuery, z } = require('../../validators/common.validator');
 const { P } = require('../../constants/permissions');
+const env = require('../../config/env');
+const { escapeRegex } = require('../../utils/query');
+
+// Only a logo this application stored can be named, so the value can never
+// point at some other file when it is read back for a PDF.
+const LOGO_URL = new RegExp(`^${escapeRegex(env.storage.publicBaseUrl)}/logos/[A-Za-z0-9._-]+$`);
 
 const settingsRouter = express.Router();
 const rolesRouter = express.Router();
 const auditRouter = express.Router();
 
-// ------------------------------------------------------------------- Settings
+// Settings
 
 const settingsSchema = z.object({
   institution: z.object({
     universityName: z.string().trim().max(160).optional(),
     libraryName: z.string().trim().max(160).optional(),
-    logoUrl: z.string().max(500).nullable().optional(),
+    logoUrl: z.string().max(500).regex(LOGO_URL, 'Not an uploaded logo').nullable().optional(),
     email: z.string().max(160).optional(),
     phone: z.string().max(40).optional(),
     address: z.string().max(300).optional(),
@@ -86,7 +92,7 @@ settingsRouter.get('/', requirePermission(P.SETTING_VIEW), controller.getSetting
 settingsRouter.patch('/', requirePermission(P.SETTING_MANAGE), validate({ body: settingsSchema }), controller.updateSettings);
 settingsRouter.post('/logo', requirePermission(P.SETTING_MANAGE), uploadLimiter, imageUpload.single('logo'), controller.uploadLogo);
 
-// ---------------------------------------------------------------------- Roles
+// Roles
 
 const roleSchema = z.object({
   key: z.string().trim().min(2).max(40).regex(/^[a-z_]+$/, 'Use lowercase letters and underscores'),
@@ -108,7 +114,7 @@ rolesRouter.patch(
   controller.updateRole,
 );
 
-// ----------------------------------------------------------------- Audit logs
+// Audit logs
 
 const auditQuery = paginationQuery.merge(dateRangeQuery).extend({
   action: z.string().max(60).optional(),

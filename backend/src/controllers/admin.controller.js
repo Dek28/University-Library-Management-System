@@ -9,7 +9,7 @@ const storage = require('../services/storage');
 const { invalidateRoleCache } = require('../middleware/auth');
 const { ALL_PERMISSIONS, ROLE_KEYS } = require('../constants/permissions');
 
-// ------------------------------------------------------------------- Settings
+// Settings
 
 const getSettings = catchAsync(async (req, res) =>
   ok(res, { message: 'System settings', data: await settingsService.getSettings({ fresh: true }) }));
@@ -59,7 +59,7 @@ const uploadLogo = catchAsync(async (req, res) => {
   return ok(res, { message: 'Logo updated', data: { logoUrl, settings: after } });
 });
 
-// ---------------------------------------------------------------------- Roles
+// Roles
 
 const listRoles = catchAsync(async (req, res) => {
   const roles = await Role.find().sort('-level').lean();
@@ -76,6 +76,15 @@ const getPermissionCatalogue = catchAsync(async (req, res) => {
   return ok(res, { message: 'Permission catalogue', data: { permissions: ALL_PERMISSIONS, grouped } });
 });
 
+/** Unless they are a super administrator, a role manager may only grant what they hold. */
+function assertHoldsPermissions(req, actorRole, permissions = []) {
+  if (actorRole.key === ROLE_KEYS.SUPER_ADMIN) return;
+  const missing = permissions.filter((permission) => !req.permissions.has(permission));
+  if (missing.length) {
+    throw ApiError.forbidden(`You cannot grant permissions you do not hold: ${missing.join(', ')}`);
+  }
+}
+
 const updateRole = catchAsync(async (req, res) => {
   const role = await Role.findById(req.params.id);
   if (!role) throw ApiError.notFound('Role not found');
@@ -90,9 +99,13 @@ const updateRole = catchAsync(async (req, res) => {
 
   const before = role.toObject();
   const { key, isSystem, ...safe } = req.body;
+  if (safe.level !== undefined && actorRole.key !== ROLE_KEYS.SUPER_ADMIN && safe.level >= actorRole.level) {
+    throw ApiError.forbidden('You cannot raise a role to your own authority level or above');
+  }
   if (safe.permissions) {
     const unknown = safe.permissions.filter((p) => !ALL_PERMISSIONS.includes(p));
     if (unknown.length) throw ApiError.badRequest(`Unknown permission(s): ${unknown.join(', ')}`);
+    assertHoldsPermissions(req, actorRole, safe.permissions.filter((p) => !role.permissions.includes(p)));
   }
   role.set(safe);
   await role.save();
@@ -112,6 +125,7 @@ const createRole = catchAsync(async (req, res) => {
   }
   const unknown = (req.body.permissions || []).filter((p) => !ALL_PERMISSIONS.includes(p));
   if (unknown.length) throw ApiError.badRequest(`Unknown permission(s): ${unknown.join(', ')}`);
+  assertHoldsPermissions(req, actorRole, req.body.permissions);
 
   const role = await Role.create({ ...req.body, isSystem: false });
   invalidateRoleCache();
@@ -122,7 +136,7 @@ const createRole = catchAsync(async (req, res) => {
   return ok(res, { status: 201, message: 'Role created successfully', data: role });
 });
 
-// ----------------------------------------------------------------- Audit logs
+// Audit logs
 
 const listAuditLogs = catchAsync(async (req, res) => {
   const result = await auditService.list(req.query);

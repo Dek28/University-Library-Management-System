@@ -40,7 +40,7 @@ export default function ResetPassword() {
 
   if (!token || !email) {
     return (
-      <div className="rounded-xl border border-line bg-panel p-8 text-center">
+      <div className="text-center">
         <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
           <AlertCircle className="h-6 w-6" aria-hidden="true" />
         </span>
@@ -56,7 +56,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="rounded-xl border border-line bg-panel p-6 sm:p-8">
+    <div>
       <h1 className="text-xl font-semibold text-slate-900">Set a new password</h1>
       <p className="mt-1.5 text-sm text-slate-500">Resetting the password for <span className="font-medium text-slate-700">{email}</span>.</p>
 

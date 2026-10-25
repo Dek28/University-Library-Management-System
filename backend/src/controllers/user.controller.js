@@ -4,6 +4,7 @@ const ApiError = require('../utils/ApiError');
 const userService = require('../services/user.service');
 const importService = require('../services/userImport.service');
 const settingsService = require('../services/settings.service');
+const { importOptions } = require('../validators/user.validator');
 const { EXPORT_PAGE, EXPORT_OPTIONS } = require('../utils/query');
 const { buildWorkbook, sendWorkbook, sendCsv } = require('../reports/excel');
 const { streamTableReport } = require('../reports/pdf');
@@ -110,10 +111,8 @@ const remove = catchAsync(async (req, res) => {
 
 /** Updates the caller's own editable profile fields. */
 const updateOwnProfile = catchAsync(async (req, res) => {
-  const allowed = ['phone', 'address', 'gender', 'dateOfBirth'];
-  const patch = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
-  if (!Object.keys(patch).length) throw ApiError.badRequest('No editable profile fields were supplied');
-  const user = await userService.updateUser(req.user._id, patch, req.user, { req });
+  if (!Object.keys(req.body).length) throw ApiError.badRequest('No editable profile fields were supplied');
+  const user = await userService.updateUser(req.user._id, req.body, req.user, { req });
   return ok(res, { message: 'Profile updated', data: user });
 });
 
@@ -124,7 +123,8 @@ const importTemplate = catchAsync(async (req, res) => {
 
 const importUsers = catchAsync(async (req, res) => {
   if (!req.file) throw ApiError.badRequest('An .xlsx file is required');
-  const result = await importService.importStudents(req.file.buffer, req.query, req.user, { req });
+  const options = importOptions.parse({ ...req.query, ...req.body });
+  const result = await importService.importStudents(req.file.buffer, options, req.user, { req });
   return ok(res, {
     message: `Import finished: ${result.imported} created, ${result.skipped} skipped`,
     data: result,

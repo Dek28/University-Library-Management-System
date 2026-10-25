@@ -47,12 +47,60 @@ function filterFor(allowed) {
   };
 }
 
-const build = (allowed, maxMb) =>
-  multer({
+const ZIP = [0x50, 0x4b, 0x03, 0x04];
+const OLE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+
+/** First bytes each declared type must start with. Plain-text types are checked separately. */
+const SIGNATURES = {
+  'application/pdf': [[0x25, 0x50, 0x44, 0x46, 0x2d]],
+  'application/msword': [OLE],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [ZIP],
+  'application/vnd.ms-powerpoint': [OLE],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': [ZIP],
+  'application/epub+zip': [ZIP],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [ZIP],
+  'image/jpeg': [[0xff, 0xd8, 0xff]],
+  'image/png': [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
+};
+
+const TEXT_TYPES = new Set(['text/csv', 'application/csv', 'text/x-csv']);
+
+const startsWith = (buffer, signature) => signature.every((byte, i) => buffer[i] === byte);
+
+function matchesContent(file) {
+  const { buffer, mimetype } = file;
+  if (!buffer || !buffer.length) return false;
+
+  if (mimetype === 'image/webp') {
+    return buffer.length > 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP';
+  }
+  // The spreadsheet type that Excel reports for .csv files is either a binary workbook or text.
+  if (mimetype === 'application/vnd.ms-excel') {
+    return startsWith(buffer, OLE) || !buffer.includes(0);
+  }
+  // Text uploads must not contain binary data.
+  if (TEXT_TYPES.has(mimetype)) return !buffer.includes(0);
+
+  return (SIGNATURES[mimetype] || []).some((signature) => startsWith(buffer, signature));
+}
+
+/** Rejects a file whose bytes do not match the type it claims, such as a script renamed to .pdf. */
+const verifyContent = (req, res, next) => {
+  if (req.file && !matchesContent(req.file)) {
+    return next(ApiError.badRequest('The file content does not match its declared type'));
+  }
+  return next();
+};
+
+const build = (allowed, maxMb) => {
+  const uploader = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: maxMb * 1024 * 1024, files: 1 },
     fileFilter: filterFor(allowed),
   });
+  // Routes mount `.single(field)`, so the content check runs right after multer.
+  return { single: (field) => [uploader.single(field), verifyContent] };
+};
 
 module.exports = {
   imageUpload: build(IMAGE_TYPES, env.storage.maxImageSizeMb),

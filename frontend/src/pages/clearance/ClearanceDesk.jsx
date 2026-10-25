@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+
 import { useQuery } from '@tanstack/react-query';
-import { Search, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import {
@@ -179,7 +179,7 @@ function MemberCheck() {
         <form onSubmit={search} className="flex gap-2">
           <Input
             wrapperClassName="flex-1"
-            placeholder="Search student by ID or name…"
+            placeholder="Scan card or enter registration number, staff ID or email"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             aria-label="Member identifier"

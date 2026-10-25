@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { authApi } from '../api/endpoints';
 import { setAccessToken, refreshSession, onUnauthorized } from '../api/client';
+import { queryClient } from '../api/queryClient';
 
 /**
  * Session state.
@@ -30,6 +31,7 @@ export const useAuthStore = create((set, get) => ({
 
   async login(credentials) {
     const result = await authApi.login(credentials);
+    queryClient.clear();
     setAccessToken(result.accessToken);
     set({
       user: result.user,
@@ -44,6 +46,7 @@ export const useAuthStore = create((set, get) => ({
       await authApi.logout();
     } finally {
       setAccessToken(null);
+      queryClient.clear();
       set({ user: null, permissions: [], status: 'anonymous' });
     }
   },
@@ -58,6 +61,7 @@ export const useAuthStore = create((set, get) => ({
 
   clearSession() {
     setAccessToken(null);
+    queryClient.clear();
     set({ user: null, permissions: [], status: 'anonymous' });
   },
 

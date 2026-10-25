@@ -1,3 +1,6 @@
+/** Name and logo shown in the sidebar and on the sign-in page. The logo lives in public/. */
+export const BRAND = { name: 'SOS University Library', logo: '/sos-logo.png' };
+
 /** Mirrors the backend permission registry; used to gate UI affordances only. */
 export const P = {
   USER_VIEW: 'user:view',
@@ -69,18 +72,6 @@ export const RESOURCE_TYPES = [
   { value: 'institutional_publication', label: 'Institutional publication' },
   { value: 'conference_proceeding', label: 'Conference proceeding' },
   { value: 'other', label: 'Other' },
-];
-
-export const COPY_STATUSES = [
-  { value: 'available', label: 'Available' },
-  { value: 'borrowed', label: 'Borrowed' },
-  { value: 'reserved', label: 'Reserved' },
-  { value: 'damaged', label: 'Damaged' },
-  { value: 'lost', label: 'Lost' },
-  { value: 'missing', label: 'Missing' },
-  { value: 'withdrawn', label: 'Withdrawn' },
-  { value: 'under_repair', label: 'Under repair' },
-  { value: 'reference_only', label: 'Reference only' },
 ];
 
 export const COPY_CONDITIONS = [

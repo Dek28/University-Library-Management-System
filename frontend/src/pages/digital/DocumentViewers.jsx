@@ -26,6 +26,24 @@ export function viewerKind(item) {
   return match ? match[0] : null;
 }
 
+const SAFE_LINK = /^(https?:|mailto:|tel:|#)/i;
+
+/**
+ * Documents are rendered into the live page, so a hyperlink inside one must not
+ * be able to run script (a javascript: address). Unsafe links are disarmed and
+ * external ones open in a new tab without access to this window.
+ */
+function secureLinks(container) {
+  container.querySelectorAll('a[href]').forEach((link) => {
+    if (!SAFE_LINK.test(link.getAttribute('href').trim())) {
+      link.removeAttribute('href');
+      return;
+    }
+    link.setAttribute('target', '_blank');
+    link.setAttribute('rel', 'noopener noreferrer');
+  });
+}
+
 /** Shared frame: a fixed-height, scrollable reading area. */
 const FRAME = 'h-[calc(100vh-14rem)] min-h-[480px] w-full';
 
@@ -118,6 +136,7 @@ export function DocxViewer({ blob }) {
       ignoreLastRenderedPageBreak: true,
       experimental: true,
     });
+    secureLinks(container);
   }, [blob]);
 
   return (
@@ -163,6 +182,7 @@ export function PptxViewer({ blob }) {
 
     const previewer = init(container, { width, height: container.clientHeight, mode: 'list' });
     await previewer.preview(await blob.arrayBuffer());
+    secureLinks(container);
     hidePlaceholders();
     return () => {
       observer.disconnect();

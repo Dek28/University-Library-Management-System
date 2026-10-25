@@ -8,18 +8,20 @@ async function run() {
   const settings = await settingsService.getSettings();
   const windowDays = settings.circulation.dueSoonReminderDays;
 
-  const loans = await Loan.find({
+  const cursor = Loan.find({
     status: 'active',
     dueDate: { $gte: startOfDay(), $lte: endOfDay(addDays(new Date(), windowDays)) },
   })
     .populate('resource', 'title')
-    .limit(2000)
-    .lean();
+    .lean()
+    .cursor();
 
   const today = new Date().toISOString().slice(0, 10);
   let notified = 0;
+  let candidates = 0;
 
-  for (const loan of loans) {
+  for (let loan = await cursor.next(); loan; loan = await cursor.next()) {
+    candidates += 1;
     const remaining = daysUntil(loan.dueDate);
     // eslint-disable-next-line no-await-in-loop
     const created = await notificationService.notify({
@@ -38,7 +40,7 @@ async function run() {
     if (created) notified += 1;
   }
 
-  return { candidates: loans.length, notified, windowDays };
+  return { candidates, notified, windowDays };
 }
 
 module.exports = { run };

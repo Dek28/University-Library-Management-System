@@ -61,6 +61,12 @@ export default function UploadDialog({ open, onClose, onSaved }) {
 
   const pick = (selected) => {
     if (!selected) return;
+    // The file picker filters by type, but a dropped file bypasses it.
+    const extension = (selected.name.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
+    if (!ACCEPTED.split(',').includes(extension)) {
+      toast.error(`"${selected.name}" is not a supported document type.`);
+      return;
+    }
     const maxBytes = 25 * 1024 * 1024;
     if (selected.size > maxBytes) {
       toast.error(`"${selected.name}" is ${formatBytes(selected.size)}. The limit is 25MB.`);

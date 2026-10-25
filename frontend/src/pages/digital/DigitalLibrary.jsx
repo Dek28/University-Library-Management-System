@@ -12,7 +12,7 @@ import { digitalApi, referenceApi } from '../../api/endpoints';
 import useListQuery from '../../hooks/useListQuery';
 import { useAuthStore } from '../../store/auth';
 import { P, RESOURCE_TYPES, ACCESS_LEVELS } from '../../constants';
-import { formatBytes, formatDate, humanize, truncate } from '../../utils/format';
+import { formatBytes, humanize, truncate } from '../../utils/format';
 import UploadDialog from './UploadDialog';
 
 const ACCESS_TONES = {

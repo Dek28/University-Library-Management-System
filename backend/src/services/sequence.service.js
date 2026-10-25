@@ -40,7 +40,7 @@ const nextLoanCode = (options = {}) => {
 
 /**
  * Accession numbers: one running number for the whole library, zero-padded to
- * six digits (000001, 000002, …), in the order copies are registered.
+ * six digits (000001, 000002, ...), in the order copies are registered.
  */
 const ACCESSION_COUNTER = 'ACCESSION';
 const formatAccession = (n) => String(n).padStart(6, '0');

@@ -12,7 +12,7 @@ import useListQuery from '../../hooks/useListQuery';
 import { useAuthStore } from '../../store/auth';
 import useFinesEnabled from '../../hooks/useFinesEnabled';
 import { P, USER_STATUSES } from '../../constants';
-import { formatDate, formatMoney, fullName, memberIdentifier } from '../../utils/format';
+import { formatMoney, fullName, memberIdentifier } from '../../utils/format';
 
 /** Suspend / reactivate / archive an account, with a reason for the audit trail. */
 function StatusDialog({ user, open, onClose, onSaved }) {

@@ -35,7 +35,7 @@ const ordinal = (n) => {
   return n + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
 };
 
-/** Editions are stored as "1st", "2nd"… and shown as "1st Edition". */
+/** Editions are stored as "1st", "2nd", ... and shown as "1st Edition". */
 const EDITION_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
   value: ordinal(i + 1),
   label: `${ordinal(i + 1)} Edition`,
@@ -496,13 +496,11 @@ export default function ResourceForm() {
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4"
+        className="w-full space-y-4 lg:w-2/3"
         noValidate
       >
 
-        {/* ===============================
-            BIBLIOGRAPHIC DETAILS
-        =============================== */}
+        {/* Bibliographic details */}
 
         <Card title="Bibliographic details">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -621,13 +619,11 @@ export default function ResourceForm() {
         </Card>
 
 
-        {/* ===============================
-            CLASSIFICATION
-        =============================== */}
+        {/* Classification */}
 
         <Card title="Classification and discovery">
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-2">
 
             <TagInput
               label="Authors"
@@ -696,13 +692,11 @@ export default function ResourceForm() {
         </Card>
 
 
-        {/* ===============================
-            ACQUISITION
-        =============================== */}
+        {/* Acquisition */}
 
         <Card title="Acquisition and circulation rules">
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2">
 
             <Select
               label="Acquisition source"
@@ -793,9 +787,7 @@ export default function ResourceForm() {
         </Card>
 
 
-        {/* ===============================
-            ACTION BUTTONS
-        =============================== */}
+        {/* Action buttons */}
 
         <div className="flex justify-end gap-2">
 

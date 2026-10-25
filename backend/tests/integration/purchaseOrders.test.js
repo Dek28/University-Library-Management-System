@@ -117,6 +117,30 @@ describe('Book orders and invoices', () => {
     expect(receipt.status).toBe(200);
   });
 
+  it('creates copies only once when the same delivery is submitted twice at the same time', async () => {
+    const { resource: existing } = await createResource({ copyCount: 0 });
+    const order = await draft({ items: [{ resource: String(existing._id), quantity: 3, unitPrice: 20 }] });
+    await as(librarian.token).post(`/purchase-orders/${order.id}/place`);
+
+    const body = { lines: order.items.map((i) => ({ item: i.id || i._id, quantity: 3 })) };
+    const results = await Promise.all([1, 2, 3].map(() => as(librarian.token).post(`/purchase-orders/${order.id}/receive`, body)));
+
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    expect(await ResourceCopy.countDocuments({ resource: existing._id })).toBe(3);
+    const stored = await PurchaseOrder.findById(order.id);
+    expect(stored.items[0].receivedQuantity).toBe(3);
+    expect(stored.receipts).toHaveLength(1);
+  });
+
+  it('records a payment only once when it is submitted twice at the same time', async () => {
+    const order = await draft();
+    await as(librarian.token).post(`/purchase-orders/${order.id}/place`);
+
+    const results = await Promise.all([1, 2, 3].map(() => as(librarian.token).post(`/purchase-orders/${order.id}/pay`, { method: 'cash' })));
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    results.filter((r) => r.status !== 200).forEach((r) => expect(r.status).toBe(409));
+  });
+
   it('refuses to cancel a paid order', async () => {
     const order = await draft();
     await as(librarian.token).post(`/purchase-orders/${order.id}/place`);

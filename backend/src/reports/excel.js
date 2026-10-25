@@ -48,7 +48,7 @@ async function buildWorkbook({ title, subtitle, columns, rows, meta = {}, sheetN
   });
 
   rows.forEach((row) => {
-    const added = sheet.addRow(columns.map((c) => row[c.key] ?? ''));
+    const added = sheet.addRow(columns.map((c) => neutraliseFormula(row[c.key] ?? '')));
     columns.forEach((c, index) => {
       const cell = added.getCell(index + 1);
       if (c.type === 'date' && cell.value) cell.numFmt = 'yyyy-mm-dd';
@@ -83,12 +83,22 @@ async function sendWorkbook(res, workbook, filename, meta = {}) {
   res.end();
 }
 
+/**
+ * Spreadsheet programs run a text cell that starts with = + - @ (or a tab or
+ * carriage return) as a formula. Member names, titles and notes are typed by
+ * users, so such text gets a leading apostrophe and stays plain text.
+ * Numbers are left alone.
+ */
+function neutraliseFormula(value) {
+  return typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+}
+
 /** Minimal RFC 4180 CSV writer. */
 function toCsv(columns, rows) {
   const escape = (value) => {
     if (value === null || value === undefined) return '';
-    const str = value instanceof Date ? value.toISOString() : String(value);
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    const str = value instanceof Date ? value.toISOString() : String(neutraliseFormula(value));
+    return /[",\r\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
   };
   const header = columns.map((c) => escape(c.header)).join(',');
   const body = rows.map((row) => columns.map((c) => escape(row[c.key])).join(',')).join('\n');
@@ -96,7 +106,7 @@ function toCsv(columns, rows) {
 }
 
 /**
- * CSV carries no meta line — a comment row would break RFC 4180 consumers —
+ * CSV carries no meta line, because a comment row would break RFC 4180 consumers,
  * so a truncated CSV is flagged with the response header instead.
  */
 function sendCsv(res, columns, rows, filename, meta = {}) {
@@ -104,7 +114,9 @@ function sendCsv(res, columns, rows, filename, meta = {}) {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   // BOM keeps Excel happy with UTF-8 content.
-  res.send(`﻿${toCsv(columns, rows)}`);
+  res.send(`\uFEFF${toCsv(columns, rows)}`);
 }
 
-module.exports = { buildWorkbook, sendWorkbook, toCsv, sendCsv, markTruncated, ExcelJS };
+module.exports = {
+  buildWorkbook, sendWorkbook, toCsv, sendCsv, markTruncated, neutraliseFormula, ExcelJS,
+};

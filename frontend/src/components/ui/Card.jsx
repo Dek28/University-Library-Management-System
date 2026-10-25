@@ -33,14 +33,16 @@ const TONE_DOTS = {
  * Dashboard metric tile: label, value, and an optional link.
  *
  * The number is the point, so it gets the weight and the room. The tone shows
- * as a small dot beside the label rather than a bar down the side — enough to
+ * as a small dot beside the label rather than a bar down the side, enough to
  * group tiles by meaning without drawing a frame around every figure.
  *
  * Values are pre-aggregated by the API. The tile never computes anything.
  */
-export function StatCard({ label, value, tone = 'slate', to, linkLabel = 'View all', hint, loading = false }) {
+export function StatCard({
+  label, value, tone = 'slate', to, linkLabel = 'View all', hint, loading = false, compact = false,
+}) {
   return (
-    <div className="card group px-5 py-4 transition-colors duration-100 hover:border-line-strong">
+    <div className={clsx('card group transition-colors duration-100 hover:border-line-strong', compact ? 'px-4 py-3' : 'px-5 py-4')}>
       <div className="flex items-center gap-2">
         <span
           className={clsx('h-1.5 w-1.5 shrink-0 rounded-full', TONE_DOTS[tone] || TONE_DOTS.slate)}
@@ -50,19 +52,19 @@ export function StatCard({ label, value, tone = 'slate', to, linkLabel = 'View a
       </div>
 
       {loading ? (
-        <div className="skeleton mt-3 h-8 w-24" />
+        <div className={clsx('skeleton', compact ? 'mt-2 h-6 w-16' : 'mt-3 h-8 w-24')} />
       ) : (
-        <p className="mt-2 text-3xl font-semibold leading-none text-slate-900 tabular">
+        <p className={clsx('font-semibold leading-none text-slate-900 tabular', compact ? 'mt-1.5 text-xl' : 'mt-2 text-3xl')}>
           {value}
         </p>
       )}
 
-      {hint && <p className="mt-2 text-xs text-slate-500">{hint}</p>}
+      {hint && <p className={clsx('text-xs text-slate-500', compact ? 'mt-1' : 'mt-2')}>{hint}</p>}
 
       {to && (
         <Link
           to={to}
-          className="mt-3 inline-block text-sm font-medium text-brand-600 underline-offset-4 hover:text-brand-700 hover:underline"
+          className={clsx('inline-block font-medium text-brand-600 underline-offset-4 hover:text-brand-700 hover:underline', compact ? 'mt-1.5 text-xs' : 'mt-3 text-sm')}
         >
           {linkLabel}
         </Link>

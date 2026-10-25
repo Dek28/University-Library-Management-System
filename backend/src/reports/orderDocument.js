@@ -78,7 +78,7 @@ function renderOrderDocument(res, {
     return top + 16;
   };
 
-  // ------------------------------------------------------------ letterhead
+  // Letterhead
   {
     const rightW = 210;
     const leftW = W - rightW - GAP;
@@ -130,7 +130,7 @@ function renderOrderDocument(res, {
     y += GAP;
   }
 
-  // ---------------------------------------------- three information columns
+  // Three information columns
   {
     const colW = (W - GAP * 2) / 3;
     const copies = order.items.reduce((s, i) => s + i.quantity, 0);
@@ -185,7 +185,7 @@ function renderOrderDocument(res, {
     y += boxH + GAP + 2;
   }
 
-  // ------------------------------------------------------------ items table
+  // Items table
   {
     const cols = [
       { header: '#', w: 22, align: 'center' },
@@ -249,7 +249,7 @@ function renderOrderDocument(res, {
     y += GAP;
   }
 
-  // ---------------------------------------- notes / payment  |  totals
+  // Notes / payment  |  totals
   {
     const rightW = 210;
     const leftW = W - rightW - GAP;
@@ -326,7 +326,7 @@ function renderOrderDocument(res, {
     y = Math.max(ty, ly - (leftBoxes.length ? GAP : 0)) + GAP + 4;
   }
 
-  // ------------------------------------------------------ signature columns
+  // Signature columns
   {
     const colW = (W - GAP * 2) / 3;
     const boxH = 16 + 3 * 18 + 4;
@@ -347,7 +347,7 @@ function renderOrderDocument(res, {
     y += boxH;
   }
 
-  // ------------------------------------------------------- footer, all pages
+  // Footer, all pages
   const range = doc.bufferedPageRange();
   const stamp = `Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC${generatedBy ? ` by ${generatedBy}` : ''}`;
   for (let i = range.start; i < range.start + range.count; i += 1) {

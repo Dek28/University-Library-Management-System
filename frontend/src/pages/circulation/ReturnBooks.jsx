@@ -1,8 +1,17 @@
 import { useState } from 'react';
-import { Search, BookOpen, AlertTriangle, CheckCircle2, Bookmark } from 'lucide-react';
+import { BookOpen, AlertTriangle, CheckCircle2, Bookmark } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
-  PageHeader, Card, Button, Input, Select, Textarea, StatusBadge, Badge, Avatar, DetailRow, CameraScanButton,
+  PageHeader,
+  Card,
+  Button,
+  Input,
+  Select,
+  Textarea,
+  Badge,
+  Avatar,
+  DetailRow,
+  CameraScanButton,
 } from '../../components/ui';
 import { loanApi, copyApi } from '../../api/endpoints';
 import { COPY_CONDITIONS } from '../../constants';
@@ -80,7 +89,8 @@ export default function ReturnBooks() {
     <>
       <PageHeader
         title="Return Books"
-        breadcrumbs={[{ label: 'Circulation', to: '/circulation' }, { label: 'Return' }]}      />
+        breadcrumbs={[{ label: 'Circulation', to: '/circulation' }, { label: 'Return' }]}
+      />
 
       <div className="max-w-3xl space-y-4">
         <Card title="Scan the item">

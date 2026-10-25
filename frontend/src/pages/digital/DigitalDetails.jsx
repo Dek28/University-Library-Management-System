@@ -6,7 +6,7 @@ import {
   PageHeader, Card, Button, DetailRow, Badge, PageLoader, ErrorState,
 } from '../../components/ui';
 import { digitalApi } from '../../api/endpoints';
-import { formatBytes, formatDate, formatDateTime, fullName, humanize } from '../../utils/format';
+import { formatBytes, formatDate, fullName, humanize } from '../../utils/format';
 
 export default function DigitalDetails() {
   const { id } = useParams();

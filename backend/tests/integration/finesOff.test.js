@@ -7,7 +7,7 @@ const {
 
 const { Loan, Fine, User } = models;
 
-/** Settings → Circulation → "Charge fines" switched off. */
+/** Settings > Circulation > "Charge fines" switched off. */
 const finesOff = () => ensureSettings({ circulation: { finesEnabled: false } });
 
 describe('Fines turned off', () => {

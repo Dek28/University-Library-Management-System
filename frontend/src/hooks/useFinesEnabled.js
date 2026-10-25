@@ -1,7 +1,7 @@
 import { useAuthStore } from '../store/auth';
 
 /**
- * Whether the library charges fines (Settings → Circulation → Charge fines).
+ * Whether the library charges fines (Settings > Circulation > Charge fines).
  * When off, every fines screen, column, card and figure is hidden.
  * Reads as on until settings have loaded, matching the server's default.
  */

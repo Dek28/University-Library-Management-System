@@ -43,11 +43,4 @@ function stop() {
   tasks.length = 0;
 }
 
-/** Runs one job immediately; used by tests and the maintenance endpoint. */
-async function runNow(name) {
-  const job = registry.find((j) => j.name === name);
-  if (!job) throw new Error(`Unknown job "${name}"`);
-  return job.run();
-}
-
-module.exports = { start, stop, runNow, registry };
+module.exports = { start, stop, registry };

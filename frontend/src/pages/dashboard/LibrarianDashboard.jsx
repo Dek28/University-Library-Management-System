@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { dashboardApi } from '../../api/endpoints';
-import { Card, StatCard, PageHeader, ErrorState, Button, StatusBadge } from '../../components/ui';
+import { Card, StatCard, PageHeader, ErrorState, Button } from '../../components/ui';
 import { CirculationLineChart } from '../../components/charts/Charts';
 import { formatMoney, formatNumber, formatDate, fullName, memberIdentifier } from '../../utils/format';
 import { useAuthStore } from '../../store/auth';
@@ -37,31 +37,31 @@ export default function LibrarianDashboard() {
         )}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Books issued today" value={formatNumber(cards.issuedToday)} tone="blue" loading={isLoading} to="/circulation/loans" />
-        <StatCard label="Returns today" value={formatNumber(cards.returnedToday)} tone="green" loading={isLoading} to="/circulation/loans" />
-        <StatCard label="Overdue books" value={formatNumber(cards.overdueLoans)} tone="red" loading={isLoading} to="/circulation/loans?overdueOnly=true" />
-        <StatCard label="Ready for pickup" value={formatNumber(cards.reservationsReady)} tone="amber" loading={isLoading} to="/administration/reservations?status=ready" />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard compact label="Books issued today" value={formatNumber(cards.issuedToday)} tone="blue" loading={isLoading} to="/circulation/loans" />
+        <StatCard compact label="Returns today" value={formatNumber(cards.returnedToday)} tone="green" loading={isLoading} to="/circulation/loans" />
+        <StatCard compact label="Overdue books" value={formatNumber(cards.overdueLoans)} tone="red" loading={isLoading} to="/circulation/loans?overdueOnly=true" />
+        <StatCard compact label="Ready for pickup" value={formatNumber(cards.reservationsReady)} tone="amber" loading={isLoading} to="/administration/reservations?status=ready" />
       </div>
 
-      <div className={`mt-4 grid gap-4 sm:grid-cols-2 ${finesEnabled ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
-        <StatCard label="Pending clearance" value={formatNumber(cards.pendingClearance)} tone="purple" loading={isLoading} to="/clearance" />
+      <div className={`mt-3 grid gap-3 sm:grid-cols-2 ${finesEnabled ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
+        <StatCard compact label="Pending clearance" value={formatNumber(cards.pendingClearance)} tone="purple" loading={isLoading} to="/clearance" />
         {finesEnabled && (
-          <StatCard label="Outstanding fines" value={formatMoney(cards.outstandingFines, symbol)} tone="amber" loading={isLoading} to="/administration/fines?outstandingOnly=true" />
+          <StatCard compact label="Outstanding fines" value={formatMoney(cards.outstandingFines, symbol)} tone="amber" loading={isLoading} to="/administration/fines?outstandingOnly=true" />
         )}
-        <StatCard label="Reading sessions today" value={formatNumber(cards.readingSessionsToday)} tone="blue" loading={isLoading} to="/reading-groups/schedule" />
-        <StatCard label="Recently added titles" value={formatNumber((lists.recentlyAdded || []).length)} tone="slate" loading={isLoading} to="/catalog" />
+        <StatCard compact label="Reading sessions today" value={formatNumber(cards.readingSessionsToday)} tone="blue" loading={isLoading} to="/reading-groups/schedule" />
+        <StatCard compact label="Recently added titles" value={formatNumber((lists.recentlyAdded || []).length)} tone="slate" loading={isLoading} to="/catalog" />
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-3 grid gap-3 xl:grid-cols-3">
         <Card title="Monthly circulation" className="xl:col-span-2">
-          {isLoading ? <div className="skeleton h-[260px]" /> : <CirculationLineChart data={data?.charts?.circulationTrend || []} />}
+          {isLoading ? <div className="skeleton h-[190px]" /> : <CirculationLineChart data={data?.charts?.circulationTrend || []} height={190} />}
         </Card>
 
         <Card title="Reading sessions today" noPadding>
           <ul className="divide-y divide-line">
             {(lists.sessionsToday || []).map((session) => (
-              <li key={session._id || session.id} className="px-5 py-3">
+              <li key={session._id || session.id} className="px-4 py-2">
                 <p className="truncate text-sm font-medium text-slate-800">{session.group?.name}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {session.startTime}–{session.endTime} · {session.space?.name}
@@ -69,14 +69,14 @@ export default function LibrarianDashboard() {
               </li>
             ))}
             {!isLoading && !(lists.sessionsToday || []).length && (
-              <li className="px-5 py-8 text-center text-sm text-slate-500">No sessions scheduled for today.</li>
+              <li className="px-4 py-5 text-center text-sm text-slate-500">No sessions scheduled for today.</li>
             )}
           </ul>
         </Card>
       </div>
 
       <Card
-        className="mt-4"
+        className="mt-3"
         title="Overdue items needing follow-up"
         actions={<Button as={Link} to="/circulation/loans?overdueOnly=true" variant="secondary" size="sm">View all</Button>}
         noPadding

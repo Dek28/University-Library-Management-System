@@ -25,7 +25,7 @@ const validate = (schemas) => (req, res, next) => {
     if (err instanceof ZodError) {
       return next(ApiError.unprocessable(
         'Validation failed',
-        err.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+        err.issues.map((e) => ({ field: e.path.join('.'), message: e.message })),
       ));
     }
     return next(err);

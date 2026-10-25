@@ -285,7 +285,7 @@ describe('Reading groups', () => {
   describe('member visibility', () => {
     it('shows a member only the groups they belong to', async () => {
       await createGroup({ name: 'My group' });
-      const outsiderGroup = await createGroup({
+      await createGroup({
         name: 'Someone else group',
         members: members.map((m) => String(m._id)),
         leader: String(members[0]._id),

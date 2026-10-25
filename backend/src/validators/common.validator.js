@@ -27,10 +27,11 @@ const dateRangeQuery = z.object({
 
 const password = z.string()
   .min(8, 'Password must be at least 8 characters')
-  .max(128)
   .regex(/[a-z]/, 'Password must contain a lowercase letter')
   .regex(/[A-Z]/, 'Password must contain an uppercase letter')
-  .regex(/\d/, 'Password must contain a number');
+  .regex(/\d/, 'Password must contain a number')
+  // bcrypt reads only the first 72 bytes, so a longer password would be silently truncated.
+  .refine((value) => Buffer.byteLength(value, 'utf8') <= 72, 'Password must be at most 72 bytes long');
 
 const email = z.string().trim().toLowerCase().email('A valid email address is required');
 
@@ -47,10 +48,7 @@ const yearField = z
 
 const timeString = z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/, 'Time must be in HH:mm format');
 
-const isoDate = z.union([z.string().datetime({ offset: true }), z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.date()])
-  .transform((v) => new Date(v));
-
 module.exports = {
   z, objectId, optionalObjectId, idParam, booleanish,
-  paginationQuery, dateRangeQuery, password, email, phone, money, yearField, timeString, isoDate,
+  paginationQuery, dateRangeQuery, password, email, phone, money, yearField, timeString,
 };

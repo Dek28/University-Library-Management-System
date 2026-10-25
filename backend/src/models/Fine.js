@@ -29,7 +29,7 @@ const fineSchema = new Schema(
     waiveReason: { type: String, trim: true, default: '' },
     notes: { type: String, trim: true, default: '' },
   },
-  { timestamps: true },
+  { timestamps: true, optimisticConcurrency: true },
 );
 
 fineSchema.plugin(toJSONPlugin);

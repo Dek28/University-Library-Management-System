@@ -66,7 +66,15 @@ const listUsersQuery = paginationQuery.merge(dateRangeQuery).extend({
   format: z.enum(['json', 'xlsx', 'csv', 'pdf']).optional().default('json'),
 });
 
-const importQuery = z.object({
+const updateOwnProfileSchema = z.object({
+  phone: z.string().trim().max(30).optional(),
+  address: z.string().trim().max(200).optional(),
+  gender: z.enum(GENDERS).optional(),
+  dateOfBirth: z.coerce.date().optional().nullable(),
+});
+
+// Read from the form body; the query string is accepted only for older clients.
+const importOptions = z.object({
   roleKey: z.string().optional().default('student'),
   defaultPassword: password,
   dryRun: booleanish.optional(),
@@ -75,6 +83,6 @@ const importQuery = z.object({
 const lookupQuery = z.object({ identifier: z.string().trim().min(2) });
 
 module.exports = {
-  createUserSchema, updateUserSchema, changeStatusSchema, adminResetPasswordSchema,
-  listUsersQuery, importQuery, lookupQuery,
+  createUserSchema, updateUserSchema, updateOwnProfileSchema, changeStatusSchema,
+  adminResetPasswordSchema, listUsersQuery, importOptions, lookupQuery,
 };

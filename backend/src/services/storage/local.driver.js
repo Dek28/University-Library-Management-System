@@ -8,8 +8,9 @@ const ROOT = env.storage.localRoot;
 
 /** Blocks traversal outside the upload root. */
 function resolveKey(key) {
-  const target = path.resolve(ROOT, key);
-  if (!target.startsWith(path.resolve(ROOT))) {
+  const root = path.resolve(ROOT);
+  const target = path.resolve(root, key);
+  if (!target.startsWith(root + path.sep)) {
     throw new Error('Invalid storage key');
   }
   return target;

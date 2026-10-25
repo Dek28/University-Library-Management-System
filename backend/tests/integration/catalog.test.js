@@ -280,7 +280,7 @@ describe('Catalogue and copies', () => {
     });
 
     it('filters by availability', async () => {
-      const available = await createResource({ title: 'On the shelf', copyCount: 1 });
+      await createResource({ title: 'On the shelf', copyCount: 1 });
       const lent = await createResource({ title: 'All out', copyCount: 1 });
 
       await as(librarian.token).post('/loans/issue', {

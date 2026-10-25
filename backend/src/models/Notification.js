@@ -30,13 +30,18 @@ const notificationSchema = new Schema(
       error: { type: String, default: '' },
     }],
     // Guards against a nightly job re-sending the same reminder.
-    dedupeKey: { type: String, default: null },
+    dedupeKey: { type: String },
   },
   { timestamps: true },
 );
 
 notificationSchema.plugin(toJSONPlugin);
 notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
-notificationSchema.index({ dedupeKey: 1 }, { unique: true, sparse: true });
+// Partial rather than sparse: a sparse index still treats an explicit null as a
+// value, so a second notification without a key would be rejected as a duplicate.
+notificationSchema.index(
+  { dedupeKey: 1 },
+  { unique: true, partialFilterExpression: { dedupeKey: { $type: 'string' } }, name: 'unique_dedupe_key' },
+);
 
 module.exports = mongoose.model('Notification', notificationSchema);

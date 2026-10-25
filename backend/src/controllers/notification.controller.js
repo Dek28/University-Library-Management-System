@@ -1,3 +1,4 @@
+const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const { ok, paginated } = require('../utils/response');
 const notificationService = require('../services/notification.service');
@@ -22,7 +23,8 @@ const markAllRead = catchAsync(async (req, res) => {
 });
 
 const remove = catchAsync(async (req, res) => {
-  await notificationService.remove(req.user._id, req.params.id);
+  const removed = await notificationService.remove(req.user._id, req.params.id);
+  if (!removed) throw ApiError.notFound('Notification not found');
   return ok(res, { message: 'Notification deleted' });
 });
 

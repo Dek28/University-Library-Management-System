@@ -4,14 +4,22 @@ import { useQuery } from '@tanstack/react-query';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
-  PageHeader, Card, DataTable, Pagination, Button, IconButton, SearchInput,
-  Select, StatusBadge, ConfirmDialog, Badge,
+  PageHeader,
+  Card,
+  DataTable,
+  Pagination,
+  Button,
+  IconButton,
+  SearchInput,
+  Select,
+  StatusBadge,
+  ConfirmDialog,
 } from '../../components/ui';
 import { resourceApi, referenceApi, authorApi } from '../../api/endpoints';
 import useListQuery from '../../hooks/useListQuery';
 import { useAuthStore } from '../../store/auth';
 import { P, RESOURCE_TYPES } from '../../constants';
-import { humanize, truncate, shelfLabel } from '../../utils/format';
+import { truncate, shelfLabel } from '../../utils/format';
 
 const FILTER_KEYS = ['resourceType', 'category', 'author', 'shelf', 'availability'];
 

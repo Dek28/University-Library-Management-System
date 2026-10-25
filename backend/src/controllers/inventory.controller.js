@@ -22,7 +22,7 @@ const startAudit = catchAsync(async (req, res) =>
   created(res, { message: 'Stock verification started', data: await inventoryService.startAudit(req.body, req.user, { req }) }));
 
 const recordItem = catchAsync(async (req, res) => {
-  const result = await inventoryService.recordItem(req.params.id, req.body, req.user, { req });
+  const result = await inventoryService.recordItem(req.params.id, req.body, req.user);
   return ok(res, { message: `Recorded ${result.copy.accessionNumber} as ${req.body.foundStatus}`, data: result });
 });
 

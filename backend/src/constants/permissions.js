@@ -163,4 +163,4 @@ const ROLE_DEFINITIONS = [
   { key: ROLE_KEYS.STUDENT, name: 'Student', level: 10, description: 'Student borrower' },
 ].map((r) => ({ ...r, permissions: [...new Set(ROLE_PERMISSIONS[r.key])] }));
 
-module.exports = { P, PERMISSIONS: P, ALL_PERMISSIONS, ROLE_KEYS, ROLE_PERMISSIONS, ROLE_DEFINITIONS };
+module.exports = { P, ALL_PERMISSIONS, ROLE_KEYS, ROLE_PERMISSIONS, ROLE_DEFINITIONS };

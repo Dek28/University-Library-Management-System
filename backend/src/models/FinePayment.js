@@ -21,6 +21,5 @@ const paymentSchema = new Schema(
 );
 
 paymentSchema.plugin(toJSONPlugin);
-paymentSchema.index({ paidAt: -1 });
 
 module.exports = mongoose.model('FinePayment', paymentSchema);

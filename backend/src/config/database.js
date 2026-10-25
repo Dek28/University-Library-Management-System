@@ -6,12 +6,7 @@ mongoose.set('strictQuery', true);
 
 let transactionsSupported = null;
 
-/**
- * Detects whether the connected deployment supports multi-document
- * transactions (replica set / sharded cluster). Standalone `mongod`
- * instances do not, and the circulation services fall back to a
- * sequential path with compensating updates in that case.
- */
+
 async function detectTransactionSupport() {
   try {
     const admin = mongoose.connection.db.admin();
@@ -24,6 +19,20 @@ async function detectTransactionSupport() {
   return transactionsSupported;
 }
 
+/**
+ * Drops indexes that were replaced by a different definition, so the old rule
+ * stops rejecting valid writes. Safe to repeat: a missing index is ignored.
+ */
+async function dropSupersededIndexes() {
+  try {
+    await mongoose.connection.collection('notifications').dropIndex('dedupeKey_1');
+    logger.info('Dropped superseded index notifications.dedupeKey_1');
+  } catch (err) {
+    // 27 = IndexNotFound, 26 = collection does not exist yet.
+    if (![26, 27].includes(err.code)) logger.warn(`Could not drop notifications.dedupeKey_1: ${err.message}`);
+  }
+}
+
 const supportsTransactions = () => transactionsSupported === true;
 
 async function connectDatabase(uri = env.isTest ? env.mongoUriTest : env.mongoUri) {
@@ -33,6 +42,7 @@ async function connectDatabase(uri = env.isTest ? env.mongoUriTest : env.mongoUr
     maxPoolSize: 20,
   });
   logger.info(`MongoDB connected: ${mongoose.connection.name}`);
+  await dropSupersededIndexes();
   await detectTransactionSupport();
   return mongoose.connection;
 }

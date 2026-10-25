@@ -40,7 +40,7 @@ async function record({
       ipAddress: req?.clientIp || req?.ip || '',
       userAgent: req?.get?.('user-agent') || '',
       method: req?.method || '',
-      path: req?.originalUrl || '',
+      path: (req?.originalUrl || '').split('?')[0],
     });
   } catch (err) {
     logger.error(`Failed to write audit log for ${action}: ${err.message}`);

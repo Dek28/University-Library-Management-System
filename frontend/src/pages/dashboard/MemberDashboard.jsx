@@ -42,16 +42,16 @@ export default function MemberDashboard() {
         actions={<Button as={Link} to="/catalog">Search the catalogue</Button>}
       />
 
-      <div className={`grid gap-4 sm:grid-cols-2 ${finesEnabled ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
-        <StatCard label="Active loans" value={formatNumber(cards.activeLoans)} tone="blue" to="/my/borrowing" loading={isLoading} />
-        <StatCard label="Due soon" value={formatNumber(cards.dueSoon)} tone="amber" to="/my/borrowing" loading={isLoading} />
-        <StatCard label="Overdue" value={formatNumber(cards.overdue)} tone="red" to="/my/borrowing" loading={isLoading} />
+      <div className={`grid gap-3 sm:grid-cols-2 ${finesEnabled ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
+        <StatCard compact label="Active loans" value={formatNumber(cards.activeLoans)} tone="blue" to="/my/borrowing" loading={isLoading} />
+        <StatCard compact label="Due soon" value={formatNumber(cards.dueSoon)} tone="amber" to="/my/borrowing" loading={isLoading} />
+        <StatCard compact label="Overdue" value={formatNumber(cards.overdue)} tone="red" to="/my/borrowing" loading={isLoading} />
         {finesEnabled && (
-          <StatCard label="Fine balance" value={formatMoney(cards.fineBalance, symbol)} tone={cards.fineBalance > 0 ? 'red' : 'green'} to="/my/fines" loading={isLoading} />
+          <StatCard compact label="Fine balance" value={formatMoney(cards.fineBalance, symbol)} tone={cards.fineBalance > 0 ? 'red' : 'green'} to="/my/fines" loading={isLoading} />
         )}
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-3 grid gap-3 xl:grid-cols-3">
         <Card
           title="Items you have borrowed"
           className="xl:col-span-2"
@@ -60,8 +60,8 @@ export default function MemberDashboard() {
         >
           <ul className="divide-y divide-line">
             {(lists.loans || []).map((loan) => (
-              <li key={loan._id || loan.id} className="flex items-center gap-4 px-5 py-3.5">
-                <div className="flex h-12 w-9 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-400">
+              <li key={loan._id || loan.id} className="flex items-center gap-3 px-4 py-2.5">
+                <div className="flex h-10 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-400">
                   <BookOpen className="h-4 w-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -74,7 +74,7 @@ export default function MemberDashboard() {
               </li>
             ))}
             {!isLoading && !(lists.loans || []).length && (
-              <li className="px-5 py-10 text-center text-sm text-slate-500">
+              <li className="px-4 py-5 text-center text-sm text-slate-500">
                 You have nothing on loan right now.
               </li>
             )}
@@ -100,7 +100,7 @@ export default function MemberDashboard() {
                 </p>
               </div>
             </div>
-            <Button as={Link} to="/my/clearance" variant="secondary" size="sm" className="mt-4 w-full">
+            <Button as={Link} to="/my/clearance" variant="secondary" size="sm" className="mt-3 w-full">
               Open clearance
             </Button>
           </Card>
@@ -108,7 +108,7 @@ export default function MemberDashboard() {
           <Card title="Reservations" noPadding>
             <ul className="divide-y divide-line">
               {(lists.reservations || []).map((reservation) => (
-                <li key={reservation._id || reservation.id} className="px-5 py-3">
+                <li key={reservation._id || reservation.id} className="px-4 py-2">
                   <p className="truncate text-sm font-medium text-slate-800">{reservation.resource?.title}</p>
                   <div className="mt-1 flex items-center gap-2">
                     <StatusBadge status={reservation.status} />
@@ -119,7 +119,7 @@ export default function MemberDashboard() {
                 </li>
               ))}
               {!isLoading && !(lists.reservations || []).length && (
-                <li className="px-5 py-6 text-center text-sm text-slate-500">No active reservations.</li>
+                <li className="px-4 py-5 text-center text-sm text-slate-500">No active reservations.</li>
               )}
             </ul>
           </Card>
@@ -127,7 +127,7 @@ export default function MemberDashboard() {
       </div>
 
       <Card
-        className="mt-4"
+        className="mt-3"
         title="Recommended for you"
         subtitle="Based on the subjects you have borrowed from"
         actions={<Button as={Link} to="/catalog" variant="secondary" size="sm">Browse catalogue</Button>}
@@ -139,7 +139,7 @@ export default function MemberDashboard() {
               to={`/catalog/${resource._id || resource.id}`}
               className="group rounded-lg border border-line p-3 transition-colors hover:border-brand-300 hover:bg-brand-50/40"
             >
-              <div className="mb-2 flex h-24 items-center justify-center rounded bg-slate-100 text-slate-300">
+              <div className="mb-2 flex h-16 items-center justify-center rounded bg-slate-100 text-slate-300">
                 {resource.coverImage
                   ? <img src={resource.coverImage} alt="" className="h-full w-full rounded object-cover" />
                   : <BookOpen className="h-6 w-6" aria-hidden="true" />}

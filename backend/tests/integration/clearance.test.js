@@ -1,6 +1,5 @@
-const dayjs = require('dayjs');
 const {
-  as, ensureRoles, ensureSettings, createUser, createAndSignIn,
+  as, ensureRoles, ensureSettings, createAndSignIn,
   createResource, resetDatabase, models,
 } = require('../helpers');
 
@@ -104,11 +103,11 @@ describe('Student clearance', () => {
     });
 
     it('re-checks obligations at the moment of approval', async () => {
-      // Opened while clear…
+      // Opened while clear...
       const opened = await as(librarian.token).post('/clearance', { user: String(student.user.id) });
       expect(opened.body.data.status).toBe('pending');
 
-      // …then the member borrows something before approval.
+      // ...then the member borrows something before approval.
       const { copies } = await createResource({ copyCount: 1 });
       await as(librarian.token).post('/loans/issue', {
         userIdentifier: 'REG/CLR/0001',

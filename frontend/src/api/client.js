@@ -12,7 +12,6 @@ let accessToken = null;
 let onSessionLost = () => {};
 
 export const setAccessToken = (token) => { accessToken = token; };
-export const getAccessToken = () => accessToken;
 export const onUnauthorized = (handler) => { onSessionLost = handler; };
 
 const api = axios.create({
@@ -108,7 +107,7 @@ function warnIfTruncated(response) {
   toast(
     `Export limited to ${shown.toLocaleString()} of ${total.toLocaleString()} records. `
     + 'Narrow the filters or date range to export the rest.',
-    { icon: '⚠️', duration: 8000 },
+    { duration: 8000 },
   );
 }
 

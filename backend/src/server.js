@@ -21,12 +21,15 @@ async function repairIndexes() {
 }
 
 async function start() {
+  if (env.jwt.usingDefaultSecrets && !env.isTest) {
+    logger.warn('JWT_ACCESS_SECRET or JWT_REFRESH_SECRET is not set: tokens are signed with a published default. Set both before exposing this server.');
+  }
   await connectDatabase();
   await repairIndexes();
 
   server = app.listen(env.port, () => {
     logger.info(`ULMS API listening on http://localhost:${env.port}${env.apiPrefix}`);
-    logger.info(`API documentation at http://localhost:${env.port}/api-docs`);
+    if (env.apiDocsEnabled) logger.info(`API documentation at http://localhost:${env.port}/api-docs`);
   });
 
   if (env.jobs.enabled) jobs.start();

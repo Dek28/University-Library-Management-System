@@ -12,7 +12,7 @@ const router = express.Router();
 router.use(authenticate);
 
 // Self-service profile update. No elevated permission needed.
-router.patch('/me/profile', controller.updateOwnProfile);
+router.patch('/me/profile', validate({ body: schemas.updateOwnProfileSchema }), controller.updateOwnProfile);
 
 router.get('/import/template', requirePermission(P.USER_IMPORT), controller.importTemplate);
 router.post(
@@ -20,7 +20,6 @@ router.post(
   requirePermission(P.USER_IMPORT),
   uploadLimiter,
   spreadsheetUpload.single('file'),
-  validate({ query: schemas.importQuery }),
   controller.importUsers,
 );
 

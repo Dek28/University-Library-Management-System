@@ -9,9 +9,9 @@ const COLORS = { primary: '#1E3A5F', muted: '#6B7280', line: '#D1D5DB', zebra: '
 /** Resolves the institution logo on disk, if one has been uploaded. */
 function resolveLogo(logoUrl) {
   if (!logoUrl) return null;
-  const key = logoUrl.replace(`${env.storage.publicBaseUrl}/`, '');
-  const file = path.resolve(env.storage.localRoot, key);
-  return fs.existsSync(file) ? file : null;
+  const root = path.resolve(env.storage.localRoot);
+  const file = path.resolve(root, logoUrl.replace(`${env.storage.publicBaseUrl}/`, ''));
+  return file.startsWith(root + path.sep) && fs.existsSync(file) ? file : null;
 }
 
 function drawHeader(doc, { institution = {}, title, subtitle, meta = {} }) {

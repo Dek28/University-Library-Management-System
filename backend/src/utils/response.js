@@ -18,8 +18,6 @@ const ok = (res, { message = 'Success', data = null, meta, status = 200 } = {}) 
 
 const created = (res, opts = {}) => ok(res, { status: 201, message: 'Created successfully', ...opts });
 
-const noContent = (res) => res.status(204).send();
-
 /** Success envelope for paginated list endpoints. */
 const paginated = (res, { message = 'Success', items, page, limit, total }) =>
   res.status(200).json({
@@ -36,4 +34,4 @@ const paginated = (res, { message = 'Success', items, page, limit, total }) =>
     },
   });
 
-module.exports = { ok, created, noContent, paginated, serialize };
+module.exports = { ok, created, paginated, serialize };

@@ -60,16 +60,6 @@ const authenticate = catchAsync(async (req, res, next) => {
   return next();
 });
 
-/** Attaches `req.user` when a valid token is present, but never rejects. */
-const optionalAuth = catchAsync(async (req, res, next) => {
-  if (!extractToken(req)) return next();
-  try {
-    return await authenticate(req, res, next);
-  } catch (err) {
-    return next();
-  }
-});
-
 const has = (req, permission) => req.permissions?.has(permission);
 
 /** Requires every listed permission. */
@@ -91,25 +81,6 @@ const requireAnyPermission = (...permissions) => (req, res, next) => {
   return next();
 };
 
-const requireRole = (...roleKeys) => (req, res, next) => {
-  if (!req.user) return next(ApiError.unauthorized());
-  if (!roleKeys.includes(req.user.roleKey)) return next(ApiError.forbidden());
-  return next();
-};
-
-/**
- * Allows the request when the caller owns the targeted record, or holds the
- * elevated permission. `paramName` names the route/query param holding a user id.
- */
-const requireSelfOrPermission = (permission, paramName = 'userId') => (req, res, next) => {
-  if (!req.user) return next(ApiError.unauthorized());
-  const target = req.params[paramName] || req.query[paramName] || req.body[paramName];
-  if (target && String(target) === String(req.user._id)) return next();
-  if (has(req, permission)) return next();
-  return next(ApiError.forbidden());
-};
-
 module.exports = {
-  authenticate, optionalAuth, requirePermission, requireAnyPermission,
-  requireRole, requireSelfOrPermission, invalidateRoleCache, loadRole, has,
+  authenticate, requirePermission, requireAnyPermission, invalidateRoleCache, has,
 };

@@ -25,9 +25,6 @@ import { useThemeStore } from '../../store/theme';
 const SERIES_LIGHT = ['#255ae8', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
 const SERIES_DARK = ['#4d86f7', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'];
 
-/** Kept as a named export: callers use it to colour their own legends. */
-export const SERIES_COLORS = SERIES_LIGHT;
-
 const readVar = (name, fallback) => {
   if (typeof window === 'undefined') return fallback;
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();

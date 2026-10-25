@@ -6,7 +6,7 @@ import {
 } from '../../components/ui';
 import { adminApi } from '../../api/endpoints';
 import useListQuery from '../../hooks/useListQuery';
-import { formatDateTime, humanize, fullName } from '../../utils/format';
+import { formatDateTime, humanize } from '../../utils/format';
 
 const ACTION_TONES = {
   login: 'green', logout: 'slate', login_failed: 'red',

@@ -1,5 +1,8 @@
 const MAX_LIMIT = 200;
 
+/** Fields that must never appear in a response or be used as a sort key. */
+const SENSITIVE_FIELDS = ['password', 'tokenHash', 'passwordResetTokenHash', 'passwordResetExpiresAt', 'storageKey'];
+
 /**
  * Row ceiling for a full export.
  *
@@ -30,8 +33,9 @@ function buildPagination(query = {}, { defaultLimit = 20, defaultSort = '-create
   if (query.sort) {
     const raw = String(query.sort);
     const field = raw.replace(/^[-+]/, '');
-    // Guard against operator injection through the sort key.
-    if (/^[a-zA-Z0-9_.]+$/.test(field)) {
+    // Guard against operator injection through the sort key, and against
+    // ordering by a credential column, which would leak how values compare.
+    if (/^[a-zA-Z0-9_.]+$/.test(field) && !SENSITIVE_FIELDS.includes(field)) {
       const order = String(query.order || '').toLowerCase();
       const descending = order ? order === 'desc' : raw.startsWith('-');
       sort = `${descending ? '-' : ''}${field}`;
@@ -46,9 +50,6 @@ const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g,
 
 /** Case-insensitive "contains" matcher. */
 const like = (value) => new RegExp(escapeRegex(value), 'i');
-
-/** Builds an $or matcher across the given fields for a free-text term. */
-const orLike = (term, fields) => ({ $or: fields.map((f) => ({ [f]: like(term) })) });
 
 /** Removes undefined/empty values so filters stay clean. */
 function compact(obj) {
@@ -75,8 +76,6 @@ function dateRange(from, to) {
   }
   return Object.keys(range).length ? range : undefined;
 }
-
-const SENSITIVE_FIELDS = ['password', 'tokenHash', 'passwordResetTokenHash', 'storageKey'];
 
 /**
  * `lean()` skips the toJSON transform, so lean documents would otherwise
@@ -122,6 +121,6 @@ async function paginate(Model, filter, { page, limit, skip, sort }, { select, po
 }
 
 module.exports = {
-  buildPagination, escapeRegex, like, orLike, compact, dateRange,
+  buildPagination, escapeRegex, like, compact, dateRange,
   paginate, normalizeLean, MAX_LIMIT, EXPORT_MAX_ROWS, EXPORT_PAGE, EXPORT_OPTIONS,
 };

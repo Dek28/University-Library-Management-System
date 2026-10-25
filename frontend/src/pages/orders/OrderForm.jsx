@@ -178,7 +178,10 @@ export default function OrderForm() {
     event.preventDefault();
     if (form.supplier.trim().length < 2) { toast.error('Enter the supplier name'); return; }
     if (lines.some((l) => !l.resource && !l.title.trim())) { toast.error('Every book needs a title'); return; }
-    if (lines.some((l) => Number(l.quantity) < 1)) { toast.error('Every quantity must be at least 1'); return; }
+    if (lines.some((l) => !Number.isInteger(Number(l.quantity)) || Number(l.quantity) < 1)) {
+      toast.error('Every quantity must be a whole number of at least 1');
+      return;
+    }
 
     const payload = {
       ...form,
@@ -224,8 +227,8 @@ export default function OrderForm() {
         )}
       />
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <div className="space-y-4 xl:col-span-2">
+      <div className="grid gap-4 lg:w-2/3 min-[1400px]:grid-cols-[minmax(0,1fr)_16rem]">
+        <div className="space-y-4">
           <Card title="Supplier">
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Supplier name" required value={form.supplier} onChange={set('supplier')} placeholder="e.g. Campus Book Distributors Ltd" />

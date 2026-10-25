@@ -10,15 +10,17 @@ const swaggerUi = require('swagger-ui-express');
 
 const env = require('./config/env');
 const logger = require('./config/logger');
+const ApiError = require('./utils/ApiError');
 const routes = require('./routes/v1');
 const openapi = require('./docs/openapi');
 const { notFound, errorHandler } = require('./middleware/error');
-const { xssClean, captureClientIp, apiLimiter } = require('./middleware/security');
+const {
+  xssClean, captureClientIp, apiLimiter, exportLimiter,
+} = require('./middleware/security');
 
 const app = express();
 
-// Correct client IPs when running behind a reverse proxy.
-app.set('trust proxy', 1);
+app.set('trust proxy', env.trustProxyHops);
 app.disable('x-powered-by');
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
@@ -28,7 +30,7 @@ app.use(cors({
   origin(origin, callback) {
     // Allow same-origin/tooling requests that send no Origin header.
     if (!origin || env.cors.origins.includes(origin)) return callback(null, true);
-    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    return callback(ApiError.forbidden('This origin is not allowed'));
   },
   credentials: true,
   // A browser hides every non-safelisted response header from cross-origin
@@ -46,7 +48,12 @@ app.use(xssClean);
 app.use(captureClientIp);
 
 if (!env.isTest) {
-  app.use(morgan(env.isProd ? 'combined' : 'dev', {
+  // Query strings can carry secrets, so only the path is logged.
+  morgan.token('path', (req) => req.originalUrl.split('?')[0]);
+  const format = env.isProd
+    ? ':remote-addr - :remote-user [:date[clf]] ":method :path HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'
+    : ':method :path :status :response-time ms - :res[content-length]';
+  app.use(morgan(format, {
     stream: { write: (msg) => logger.http?.(msg.trim()) || logger.info(msg.trim()) },
   }));
 }
@@ -68,13 +75,15 @@ app.use(
   express.static(path.join(env.storage.localRoot, 'logos'), { maxAge: '7d' }),
 );
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi, {
-  customSiteTitle: 'ULMS API Documentation',
-  swaggerOptions: { persistAuthorization: true },
-}));
-app.get('/api-docs.json', (req, res) => res.json(openapi));
+if (env.apiDocsEnabled) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi, {
+    customSiteTitle: 'ULMS API Documentation',
+    swaggerOptions: { persistAuthorization: true },
+  }));
+  app.get('/api-docs.json', (req, res) => res.json(openapi));
+}
 
-app.use(env.apiPrefix, apiLimiter, routes);
+app.use(env.apiPrefix, apiLimiter, exportLimiter, routes);
 
 app.use(notFound);
 app.use(errorHandler);

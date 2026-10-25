@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const InventoryAudit = require('../models/InventoryAudit');
 const ResourceCopy = require('../models/ResourceCopy');
 const ApiError = require('../utils/ApiError');
@@ -93,7 +94,7 @@ async function startAudit(payload, actor, context = {}) {
  * Records one scanned copy. Re-scanning the same copy replaces the earlier
  * entry so a corrected scan does not double-count.
  */
-async function recordItem(auditId, { identifier, foundStatus, condition, remark }, actor, context = {}) {
+async function recordItem(auditId, { identifier, foundStatus, condition, remark }, actor) {
   const audit = await InventoryAudit.findById(auditId);
   if (!audit) throw ApiError.notFound('Inventory audit not found');
   if (audit.status !== 'in_progress') throw ApiError.badRequest('This audit is closed');
@@ -103,8 +104,8 @@ async function recordItem(auditId, { identifier, foundStatus, condition, remark 
   });
   if (!copy) throw ApiError.notFound(`No copy found for "${identifier}"`);
 
-  const existingIndex = audit.items.findIndex((i) => String(i.copy) === String(copy._id));
   const entry = {
+    _id: new mongoose.Types.ObjectId(),
     copy: copy._id,
     accessionNumber: copy.accessionNumber,
     expectedStatus: copy.status,
@@ -115,14 +116,35 @@ async function recordItem(auditId, { identifier, foundStatus, condition, remark 
     verifiedAt: new Date(),
   };
 
-  if (existingIndex >= 0) audit.items[existingIndex] = { ...audit.items[existingIndex].toObject(), ...entry };
-  else audit.items.push(entry);
-
-  audit.verifiedCount = audit.items.filter((i) => i.foundStatus === 'found').length;
-  audit.missingCount = audit.items.filter((i) => i.foundStatus === 'missing').length;
-  audit.damagedCount = audit.items.filter((i) => i.foundStatus === 'damaged').length;
-  audit.misplacedCount = audit.items.filter((i) => i.foundStatus === 'misplaced').length;
-  await audit.save();
+  // One atomic pipeline update swaps the entry and recounts from the result, so
+  // simultaneous scans from several devices cannot overwrite each other.
+  const countOf = (status) => ({
+    $size: { $filter: { input: '$items', cond: { $eq: ['$$this.foundStatus', status] } } },
+  });
+  const updated = await InventoryAudit.updateOne(
+    { _id: auditId, status: 'in_progress' },
+    [
+      {
+        $set: {
+          items: {
+            $concatArrays: [
+              { $filter: { input: '$items', cond: { $ne: ['$$this.copy', entry.copy] } } },
+              [{ $literal: entry }],
+            ],
+          },
+        },
+      },
+      {
+        $set: {
+          verifiedCount: countOf('found'),
+          missingCount: countOf('missing'),
+          damagedCount: countOf('damaged'),
+          misplacedCount: countOf('misplaced'),
+        },
+      },
+    ],
+  );
+  if (!updated.matchedCount) throw ApiError.badRequest('This audit is closed');
 
   // Verification date on the copy itself supports "not seen since" reporting.
   copy.lastVerifiedAt = new Date();
@@ -133,8 +155,8 @@ async function recordItem(auditId, { identifier, foundStatus, condition, remark 
 
 /**
  * Closes an audit. When `applyAdjustments` is set, copies reported missing or
- * damaged have their status updated. Copies that are on loan are never
- * touched, because their whereabouts are already accounted for.
+ * damaged have their status updated. Copies that are on loan or held for a
+ * member are never touched, because their whereabouts are already accounted for.
  */
 async function completeAudit(auditId, { applyAdjustments = true, notes }, actor, context = {}) {
   const audit = await InventoryAudit.findById(auditId);
@@ -149,7 +171,7 @@ async function completeAudit(auditId, { applyAdjustments = true, notes }, actor,
 
       // eslint-disable-next-line no-await-in-loop
       const copy = await ResourceCopy.findById(item.copy);
-      if (!copy || copy.status === 'borrowed') continue;
+      if (!copy || ['borrowed', 'reserved'].includes(copy.status)) continue;
 
       const previous = copy.status;
       copy.status = nextStatus;
@@ -208,6 +230,9 @@ async function adjustCopy(copyId, { status, condition, reason }, actor, context 
   if (!copy) throw ApiError.notFound('Copy not found');
   if (copy.status === 'borrowed') {
     throw ApiError.conflict('This copy is on loan. Use the returns desk to record a loss or damage.');
+  }
+  if (copy.status === 'reserved') {
+    throw ApiError.conflict('This copy is being held for a member. Cancel the reservation first.');
   }
 
   const before = { status: copy.status, condition: copy.condition };

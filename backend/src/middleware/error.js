@@ -15,7 +15,7 @@ function normalise(err) {
   if (err instanceof ZodError) {
     return ApiError.unprocessable(
       'Validation failed',
-      err.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+      err.issues.map((e) => ({ field: e.path.join('.'), message: e.message })),
     );
   }
 
@@ -28,6 +28,11 @@ function normalise(err) {
 
   if (err instanceof mongoose.Error.CastError) {
     return ApiError.badRequest(`Invalid value for ${err.path}`);
+  }
+
+  // Another request changed the same record first.
+  if (err instanceof mongoose.Error.VersionError) {
+    return ApiError.conflict('This record was changed by someone else. Reload it and try again.');
   }
 
   if (err.code === 11000) {
@@ -49,25 +54,26 @@ function normalise(err) {
   return null;
 }
 
-// eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
   const apiError = normalise(err) || ApiError.internal(err.message);
   const isServerError = apiError.statusCode >= 500;
 
+  // The query string is left out of logs because it can carry search terms or tokens.
+  const where = `${req.method} ${req.originalUrl.split('?')[0]} (ip ${req.clientIp || req.ip || 'unknown'})`;
   if (isServerError) {
-    logger.error(`${req.method} ${req.originalUrl} -> ${err.stack || err.message}`);
+    logger.error(`${where} -> ${err.stack || err.message}`);
   } else {
-    logger.warn(`${req.method} ${req.originalUrl} -> ${apiError.statusCode} ${apiError.message}`);
+    logger.warn(`${where} -> ${apiError.statusCode} ${apiError.message}`);
   }
 
   const body = {
     success: false,
-    message: isServerError && env.isProd ? 'Internal server error' : apiError.message,
+    message: isServerError && !env.exposeDevSecrets ? 'Internal server error' : apiError.message,
     errors: apiError.errors || [],
   };
 
   // Stack traces are development-only.
-  if (!env.isProd && isServerError) body.stack = err.stack;
+  if (env.exposeDevSecrets && isServerError) body.stack = err.stack;
 
   res.status(apiError.statusCode).json(body);
 }

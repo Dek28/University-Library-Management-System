@@ -338,7 +338,7 @@ describe('Circulation', () => {
 
       const lostFine = response.body.data.fines.find((fine) => fine.fineType === 'lost');
       expect(lostFine).toBeDefined();
-      // Replacement cost 80 × the default multiplier of 1.
+      // Replacement cost 80 x the default multiplier of 1.
       expect(lostFine.amount).toBeCloseTo(80, 2);
 
       const copy = await ResourceCopy.findById(copies[0]._id);

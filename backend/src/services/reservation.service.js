@@ -134,20 +134,21 @@ async function cancel(id, { reason }, actor, context = {}) {
  * Returns the promoted reservation, or null when nobody is waiting.
  */
 async function allocateNext(resourceId, copyId, actor, session = null) {
-  const next = await Reservation.findOne({ resource: resourceId, status: 'pending' })
-    .sort('createdAt')
-    .setOptions(inSession(session));
-  if (!next) return null;
-
   const settings = await settingsService.getSettings();
   const expiresAt = addDays(new Date(), settings.circulation.reservationExpiryDays);
 
-  next.status = 'ready';
-  next.copy = copyId;
-  next.readyAt = new Date();
-  next.expiresAt = expiresAt;
-  next.queuePosition = 0;
-  await next.save(inSession(session));
+  // The claim is a single atomic update, so two copies returned at the same
+  // moment can never promote the same member.
+  const next = await Reservation.findOneAndUpdate(
+    { resource: resourceId, status: 'pending' },
+    {
+      $set: {
+        status: 'ready', copy: copyId, readyAt: new Date(), expiresAt, queuePosition: 0,
+      },
+    },
+    { sort: { createdAt: 1 }, new: true, ...inSession(session) },
+  );
+  if (!next) return null;
 
   await ResourceCopy.updateOne({ _id: copyId }, { $set: { status: 'reserved' } }, inSession(session));
 

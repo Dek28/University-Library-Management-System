@@ -1,24 +1,12 @@
 import { useEffect } from 'react';
 import { RouterProvider } from 'react-router/dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import router from './routes';
 import { useAuthStore } from './store/auth';
 import { useThemeStore } from './store/theme';
 import { adminApi } from './api/endpoints';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Auth failures are handled by the axios interceptor, so retrying them
-      // here would only delay the redirect to the sign-in screen.
-      retry: (failureCount, error) => failureCount < 2 && ![401, 403, 404].includes(error?.status),
-      refetchOnWindowFocus: false,
-      staleTime: 15_000,
-    },
-    mutations: { retry: false },
-  },
-});
+import { queryClient } from './api/queryClient';
 
 /** Restores the session and loads institution settings before the app renders. */
 function Bootstrap({ children }) {

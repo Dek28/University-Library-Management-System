@@ -127,7 +127,7 @@ export const router = createBrowserRouter([
           { path: '/profile', element: load(Profile), handle: { title: 'My Profile' } },
           { path: '/notifications', element: load(Notifications), handle: { title: 'Notifications' } },
 
-          // ------------------------------------------------------- Catalogue
+          // Catalogue
           {
             element: <RequirePermission anyOf={[P.RESOURCE_VIEW]} />,
             children: [
@@ -148,7 +148,7 @@ export const router = createBrowserRouter([
             children: [{ path: '/catalog/:id/edit', element: load(ResourceForm), handle: { title: 'Edit Book' } }],
           },
 
-          // ----------------------------------------------------- Circulation
+          // Circulation
           {
             element: <RequirePermission anyOf={[P.LOAN_ISSUE]} />,
             children: [{ path: '/circulation/borrow', element: load(BorrowBooks), handle: { title: 'Borrow Books' } }],
@@ -172,7 +172,7 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // ----------------------------------------------------------- Fines
+          // Fines
           {
             element: <RequireFines />,
             children: [{
@@ -184,7 +184,7 @@ export const router = createBrowserRouter([
             }],
           },
 
-          // ---------------------------------------------- Digital repository
+          // Digital repository
           {
             element: <RequirePermission anyOf={[P.DIGITAL_VIEW]} />,
             children: [
@@ -194,7 +194,7 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // ------------------------------------------------------- Inventory
+          // Inventory
           {
             element: <RequirePermission anyOf={[P.INVENTORY_VIEW]} />,
             children: [
@@ -205,7 +205,7 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // ----------------------------------------------------- Book orders
+          // Book orders
           {
             element: <RequirePermission anyOf={[P.INVENTORY_VIEW]} />,
             children: [
@@ -221,7 +221,7 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // ------------------------------------------------------- Clearance
+          // Clearance
           {
             element: <RequirePermission anyOf={[P.CLEARANCE_VIEW]} />,
             children: [{ path: '/clearance', element: load(ClearanceDesk), handle: { title: 'Student Clearance' } }],
@@ -231,7 +231,7 @@ export const router = createBrowserRouter([
             children: [{ path: '/my/clearance', element: load(MyClearance), handle: { title: 'My Clearance' } }],
           },
 
-          // --------------------------------------------------- Reading groups
+          // Reading groups
           {
             element: <RequirePermission anyOf={[P.GROUP_VIEW, P.GROUP_VIEW_OWN]} />,
             children: [
@@ -241,13 +241,13 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // --------------------------------------------------------- Reports
+          // Reports
           {
             element: <RequirePermission anyOf={[P.REPORT_VIEW]} />,
             children: [{ path: '/reports', element: load(Reports), handle: { title: 'Reports & Analytics' } }],
           },
 
-          // ----------------------------------------------------------- Users
+          // Users
           {
             element: <RequirePermission anyOf={[P.USER_VIEW]} />,
             children: [
@@ -268,7 +268,7 @@ export const router = createBrowserRouter([
             children: [{ path: '/users/import', element: load(BulkImport), handle: { title: 'Bulk import' } }],
           },
 
-          // -------------------------------------------------- Administration
+          // Administration
           {
             element: <RequirePermission anyOf={[P.SETTING_VIEW]} />,
             children: [{ path: '/settings', element: load(Settings), handle: { title: 'Settings' } }],
@@ -286,7 +286,7 @@ export const router = createBrowserRouter([
             children: [{ path: '/administration/audit-logs', element: load(AuditLogs), handle: { title: 'Audit Logs' } }],
           },
 
-          // ---------------------------------------------------- Member portal
+          // Member portal
           {
             element: <RequirePermission anyOf={[P.LOAN_VIEW_OWN]} />,
             children: [{ path: '/my/borrowing', element: load(ownLoans), handle: { title: 'My Borrowing' } }],

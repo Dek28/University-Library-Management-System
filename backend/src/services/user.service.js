@@ -47,6 +47,18 @@ async function assertCanAssignRole(actor, targetRole) {
   }
 }
 
+/**
+ * An actor may act on their own account, and on accounts ranked below them.
+ * Without this check, editing an account's email and then requesting a
+ * password reset would take over a higher-ranked account.
+ */
+async function assertCanManageUser(actor, user) {
+  if (String(user._id) === String(actor._id)) return;
+  const targetRole = await Role.findById(user.role).lean();
+  if (!targetRole) throw ApiError.forbidden();
+  await assertCanAssignRole(actor, targetRole);
+}
+
 function buildFilter(query) {
   const filter = compact({
     status: query.status,
@@ -131,6 +143,7 @@ async function createUser(payload, actor, context = {}) {
 async function updateUser(id, payload, actor, context = {}) {
   const user = await User.findById(id);
   if (!user) throw ApiError.notFound('User not found');
+  await assertCanManageUser(actor, user);
 
   const before = user.toObject();
 
@@ -159,8 +172,7 @@ async function changeStatus(id, { status, reason }, actor, context = {}) {
     throw ApiError.badRequest('You cannot change your own account status');
   }
 
-  const targetRole = await Role.findById(user.role).lean();
-  await assertCanAssignRole(actor, targetRole);
+  await assertCanManageUser(actor, user);
 
   // Archiving must not strand outstanding obligations.
   if (['archived', 'withdrawn'].includes(status)) {
@@ -190,8 +202,7 @@ async function resetUserPassword(id, newPassword, actor, context = {}) {
   const user = await User.findById(id).select('+password');
   if (!user) throw ApiError.notFound('User not found');
 
-  const targetRole = await Role.findById(user.role).lean();
-  await assertCanAssignRole(actor, targetRole);
+  await assertCanManageUser(actor, user);
 
   user.password = newPassword;
   user.mustChangePassword = true;
@@ -209,6 +220,7 @@ async function softDeleteUser(id, actor, context = {}) {
   const user = await User.findById(id);
   if (!user) throw ApiError.notFound('User not found');
   if (String(user._id) === String(actor._id)) throw ApiError.badRequest('You cannot delete your own account');
+  await assertCanManageUser(actor, user);
 
   const openLoans = await Loan.countDocuments({ user: user._id, status: { $in: ['active', 'overdue'] } });
   const openFines = await Fine.countDocuments({ user: user._id, status: { $in: ['outstanding', 'partially_paid'] } });

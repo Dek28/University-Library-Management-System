@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Search } from 'lucide-react';
 import { Modal, Button, Input, Select, Textarea, SearchInput } from '../../components/ui';
 import { groupApi, referenceApi, userApi } from '../../api/endpoints';
 import { groupSchema } from '../../validators/schemas';
@@ -12,7 +11,7 @@ import { cleanParams, fullName, memberIdentifier } from '../../utils/format';
 import useDebounce from '../../hooks/useDebounce';
 
 /** Student picker with server-side search; selections persist across searches. */
-function MemberPicker({ selected, onChange, leader, onLeaderChange }) {
+function MemberPicker({ selected, onChange, leader, onLeaderChange, current = [] }) {
   const [term, setTerm] = useState('');
   const debounced = useDebounce(term, 300);
 
@@ -24,6 +23,15 @@ function MemberPicker({ selected, onChange, leader, onLeaderChange }) {
 
   // Keep chosen members visible even when they fall out of the search results.
   const [known, setKnown] = useState({});
+
+  // When editing, the group's existing members arrive as full records. Without
+  // them the chips and the leader list would show raw ids until a search ran.
+  useEffect(() => {
+    const records = current.filter((member) => member && typeof member === 'object');
+    if (!records.length) return;
+    setKnown((prev) => ({ ...Object.fromEntries(records.map((user) => [user.id, user])), ...prev }));
+  }, [current]);
+
   useEffect(() => {
     if (!data?.items) return;
     setKnown((prev) => ({
@@ -202,7 +210,13 @@ export default function GroupForm({ open, group, onClose, onSaved }) {
 
         <Textarea label="Description" rows={3} error={errors.description?.message} {...register('description')} />
 
-        <MemberPicker selected={members} onChange={setMembers} leader={leader} onLeaderChange={setLeader} />
+        <MemberPicker
+          selected={members}
+          onChange={setMembers}
+          leader={leader}
+          onLeaderChange={setLeader}
+          current={group?.members}
+        />
       </form>
     </Modal>
   );
