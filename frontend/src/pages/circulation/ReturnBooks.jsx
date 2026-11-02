@@ -33,7 +33,7 @@ export default function ReturnBooks() {
   const [scan, setScan] = useState('');
   const [copy, setCopy] = useState(null);
   const [loan, setLoan] = useState(null);
-  const [condition, setCondition] = useState('good');
+  const [condition, setCondition] = useState('');
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -55,7 +55,7 @@ export default function ReturnBooks() {
         toast.error(`No open loan found for ${found.accessionNumber}`);
       } else {
         setLoan(items[0]);
-        setCondition('good');
+        setCondition('');
       }
     } catch (error) {
       setCopy(null);
@@ -155,6 +155,8 @@ export default function ReturnBooks() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Select
                   label="Condition on return"
+                  required
+                  placeholder="Select the condition first"
                   options={COPY_CONDITIONS}
                   value={condition}
                   onChange={(e) => setCondition(e.target.value)}
@@ -167,7 +169,8 @@ export default function ReturnBooks() {
                 <div className="mt-3 flex items-start gap-2.5 rounded-md border border-amber-200 bg-amber-50 px-3.5 py-2.5">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
                   <p className="text-sm text-amber-800">
-                    Recording this condition {finesEnabled && 'raises a charge against the member and '}takes the copy out of circulation.
+                    {condition === 'lost' ? 'The copy will be listed under Lost' : 'The copy will be listed under Damaged'}
+                    {finesEnabled && ' and a charge is raised against the member'}. It is not counted as available.
                   </p>
                 </div>
               )}
@@ -178,7 +181,7 @@ export default function ReturnBooks() {
 
               <div className="mt-5 flex justify-end gap-2">
                 <Button variant="secondary" onClick={() => { setLoan(null); setCopy(null); setScan(''); }}>Cancel</Button>
-                <Button onClick={submitReturn} loading={busy}>Return Book</Button>
+                <Button onClick={submitReturn} loading={busy} disabled={!condition}>Return Book</Button>
               </div>
             </Card>
           </>

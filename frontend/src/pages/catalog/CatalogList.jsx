@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { BookOpen, Eye, MapPin, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   PageHeader,
@@ -13,6 +13,7 @@ import {
   SearchInput,
   Select,
   StatusBadge,
+  Badge,
   ConfirmDialog,
 } from '../../components/ui';
 import { resourceApi, referenceApi, authorApi } from '../../api/endpoints';
@@ -51,6 +52,57 @@ function viewKey({ page, limit, sort }) {
     view.set('order', sort.direction === 'desc' ? 'desc' : 'asc');
   }
   return view.toString();
+}
+
+const COVER_TINTS = [
+  'from-sky-100 to-sky-200 text-sky-600',
+  'from-emerald-100 to-emerald-200 text-emerald-600',
+  'from-amber-100 to-amber-200 text-amber-600',
+  'from-rose-100 to-rose-200 text-rose-600',
+  'from-violet-100 to-violet-200 text-violet-600',
+  'from-teal-100 to-teal-200 text-teal-600',
+];
+
+/** The cover image, or a tinted book tile picked from the title so each row looks distinct. */
+function BookCover({ resource }) {
+  if (resource.coverImage) {
+    return (
+      <img
+        src={resource.coverImage}
+        alt=""
+        loading="lazy"
+        className="h-14 w-10 shrink-0 rounded-md object-cover shadow-sm ring-1 ring-black/5"
+      />
+    );
+  }
+  const seed = [...(resource.title || '')].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return (
+    <span
+      className={`flex h-14 w-10 shrink-0 items-center justify-center rounded-md bg-gradient-to-br shadow-sm ring-1 ring-black/5 ${COVER_TINTS[seed % COVER_TINTS.length]}`}
+      aria-hidden="true"
+    >
+      <BookOpen className="h-4 w-4" />
+    </span>
+  );
+}
+
+/** Available copies as a number plus a bar, so stock reads at a glance. */
+function CopiesMeter({ available, total }) {
+  const ratio = total > 0 ? available / total : 0;
+  const tone = available === 0 ? 'bg-red-500' : ratio <= 0.34 ? 'bg-amber-500' : 'bg-emerald-500';
+  return (
+    <div className="mx-auto w-24">
+      <div className="mb-1 flex items-baseline justify-center gap-1 whitespace-nowrap text-xs">
+        <span className={available > 0 ? 'text-sm font-semibold text-slate-800' : 'text-sm font-semibold text-red-600'}>
+          {available}
+        </span>
+        <span className="text-slate-400">of {total}</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.round(ratio * 100)}%` }} />
+      </div>
+    </div>
+  );
 }
 
 export default function CatalogList() {
@@ -226,55 +278,61 @@ export default function CatalogList() {
   const columns = [
     {
       key: 'title',
-      header: 'Title',
+      header: 'Book',
       sortable: true,
       primary: true,
-      render: (row) => (
-        <div className="min-w-0">
-          <Link to={`/catalog/${row.id}`} className="font-medium text-slate-800 hover:text-brand-600">
-            {truncate(row.title, 70)}
-          </Link>
-          {row.subtitle && <p className="truncate text-xs text-slate-500">{truncate(row.subtitle, 60)}</p>}
-        </div>
-      ),
-    },
-    {
-      key: 'authors',
-      header: 'Author',
-      render: (row) => (row.authors || []).map((a) => a.fullName).join(', ') || '-',
+      render: (row) => {
+        const authors = (row.authors || []).map((a) => a.fullName).join(', ');
+        return (
+          <div className="flex min-w-0 items-center gap-3.5">
+            <BookCover resource={row} />
+            <div className="min-w-0">
+              <Link to={`/catalog/${row.id}`} className="font-semibold text-slate-900 hover:text-brand-600">
+                {truncate(row.title, 70)}
+              </Link>
+              {row.subtitle && <p className="truncate text-xs text-slate-500">{truncate(row.subtitle, 60)}</p>}
+              {authors && <p className="mt-0.5 truncate text-sm text-slate-500">{truncate(authors, 60)}</p>}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'category',
       header: 'Category',
       hideOnMobile: true,
       hideWhenEmpty: true,
-      render: (row) => row.category?.name || '-',
+      render: (row) => (row.category?.name ? <Badge tone="blue">{row.category.name}</Badge> : '-'),
     },
-    { key: 'isbn', hideWhenEmpty: true, header: 'ISBN', hideOnMobile: true, render: (row) => row.isbn || '-' },
+    {
+      key: 'isbn',
+      hideWhenEmpty: true,
+      header: 'ISBN',
+      hideOnMobile: true,
+      render: (row) => (row.isbn ? <span className="font-mono text-xs text-slate-600">{row.isbn}</span> : '-'),
+    },
     {
       key: 'shelf',
       header: 'Shelf',
       hideOnMobile: true,
       hideWhenEmpty: true,
-      render: (row) => shelfLabel(row.shelf),
+      render: (row) => (!row.shelf ? '-' : (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-slate-600">
+          <MapPin className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+          {shelfLabel(row.shelf)}
+        </span>
+      )),
     },
     {
       key: 'availableCopies',
       header: 'Copies',
       align: 'center',
-      render: (row) => (
-        <span className="whitespace-nowrap text-xs">
-          <span className={row.availableCopies > 0 ? 'font-semibold text-emerald-600' : 'font-semibold text-red-500'}>
-            {row.availableCopies}
-          </span>
-          <span className="text-slate-400"> / {row.totalCopies}</span>
-        </span>
-      ),
+      render: (row) => <CopiesMeter available={row.availableCopies} total={row.totalCopies} />,
     },
     { key: 'status', header: 'Status', render: (row) => <StatusBadge status={row.status} /> },
     {
       key: 'actions',
-      header: 'Actions',
+      header: '',
       align: 'right',
       render: (row) => (
         <div className="flex justify-end gap-0.5">

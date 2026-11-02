@@ -44,8 +44,8 @@ const changePassword = catchAsync(async (req, res) => {
 const forgotPassword = catchAsync(async (req, res) => {
   const result = await authService.requestPasswordReset(req.body.email, { req });
   return ok(res, {
-    message: 'If that account exists, a password reset link has been issued.',
-    data: env.exposeDevSecrets ? { resetUrl: result.resetUrl || null, token: result.devToken || null } : null,
+    message: 'If that account exists, a reset code has been sent to its email address.',
+    data: env.exposeDevSecrets ? { code: result.devCode || null } : null,
   });
 });
 

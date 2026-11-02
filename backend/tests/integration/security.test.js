@@ -83,12 +83,12 @@ describe('Security and integrity', () => {
       const user = await createUser('student', { registrationNumber: 'REG/SEC/INACT', status: 'inactive' });
 
       const forgot = await request(app).post(api('/auth/forgot-password')).send({ email: user.email });
-      const token = forgot.body.data?.token;
+      const token = forgot.body.data?.code;
       expect(token).toEqual(expect.any(String));
 
       const reset = await request(app)
         .post(api('/auth/reset-password'))
-        .send({ email: user.email, token, newPassword: 'FreshPassw0rd' });
+        .send({ email: user.email, code: token, newPassword: 'FreshPassw0rd' });
       expect(reset.status).toBe(200);
 
       const login = await request(app).post(api('/auth/login')).send({ identifier: user.email, password: 'FreshPassw0rd' });

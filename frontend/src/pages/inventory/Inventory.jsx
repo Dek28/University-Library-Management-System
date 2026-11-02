@@ -70,13 +70,18 @@ function AdjustDialog({ copy, open, onClose, onSaved }) {
             { value: 'damaged', label: 'Damaged' },
             { value: 'lost', label: 'Lost' },
             { value: 'missing', label: 'Missing' },
-            { value: 'under_repair', label: 'Under repair' },
             { value: 'withdrawn', label: 'Withdrawn' },
             { value: 'reference_only', label: 'Reference only' },
           ]}
           hint="A copy that is on loan must be processed at the returns desk instead."
         />
-        <Select label="Condition" options={COPY_CONDITIONS} value={condition} onChange={(e) => setCondition(e.target.value)} />
+        <Select
+          label="Condition"
+          options={COPY_CONDITIONS}
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          hint="A damaged copy that is repaired (Excellent, Good or Fair) returns to stock as available."
+        />
         <Textarea label="Reason" required rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Recorded in the audit trail" />
       </div>
     </Modal>
@@ -108,6 +113,26 @@ function CopyStatusList({ status }) {
     },
     { key: 'shelf', hideWhenEmpty: true, header: 'Shelf', hideOnMobile: true, render: (row) => shelfLabel(row.shelf) },
     { key: 'condition', header: 'Condition', render: (row) => humanize(row.condition) },
+    ...(['damaged', 'lost'].includes(status) ? [
+      {
+        key: 'lastLoan',
+        header: 'Borrower',
+        render: (row) => (row.lastLoan?.borrower ? (
+          <div className="min-w-0">
+            <Link to={`/users/${row.lastLoan.borrower.id}`} className="font-medium text-slate-800 hover:text-brand-600">
+              {row.lastLoan.borrower.fullName}
+            </Link>
+            <p className="text-xs text-slate-500">{row.lastLoan.borrower.identifier}</p>
+          </div>
+        ) : '-'),
+      },
+      {
+        key: 'recordedAt',
+        header: status === 'lost' ? 'Lost on' : 'Damaged on',
+        hideOnMobile: true,
+        render: (row) => formatDate(row.lastLoan?.recordedAt),
+      },
+    ] : []),
     { key: 'lastVerifiedAt', header: 'Last verified', hideOnMobile: true, render: (row) => formatDate(row.lastVerifiedAt) },
     {
       key: 'actions',

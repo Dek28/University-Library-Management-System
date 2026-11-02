@@ -18,6 +18,7 @@ The server refuses to start with `NODE_ENV=production` unless all of these hold:
 
 Also set:
 
+- `SMTP_*` and `MAIL_FROM` for the mail server that sends reset codes.
 - `MONGO_URI` to the production database. Use a dedicated MongoDB user with
   read/write on that database only.
 - `TRUST_PROXY` to the number of reverse proxies in front of Node (default 1).
@@ -108,6 +109,7 @@ mongorestore --uri "$SCRATCH_MONGO_URI" --gzip --archive=ulms-2026-01-01.gz --ns
 - [ ] Backup job running and one restore tested
 - [ ] `npm test` and `npm run lint` pass
 - [ ] `npm audit --omit=dev` reviewed (see known issues)
+- [ ] SMTP configured and a reset code received at a real mailbox
 - [ ] Health check wired to the proxy or process manager
 - [ ] Proxy or CDN rate limiting enabled
 - [ ] Log output collected and rotated; logs checked for secrets
@@ -116,5 +118,7 @@ mongorestore --uri "$SCRATCH_MONGO_URI" --gzip --archive=ulms-2026-01-01.gz --ns
 
 - `exceljs` depends on `uuid` below 11.1.1 (moderate advisory). The suggested
   automatic fix downgrades `exceljs` and would break exports.
-- No email transport exists: password reset links are not delivered in
-  production. Until one is added, resets must be handled by an administrator.
+- Password reset codes are emailed, so production needs working SMTP
+  (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`,
+  `MAIL_FROM`). With `SMTP_HOST` empty nothing is sent and users cannot reset
+  their passwords. Send a test reset to a real mailbox before go-live.

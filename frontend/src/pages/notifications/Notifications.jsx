@@ -177,7 +177,6 @@ export default function Notifications() {
           <EmptyState
             icon={Bell}
             title="Nothing here yet"
-            description="Reminders and alerts about your library activity will appear on this page."
           />
         ) : (
           <ul className="divide-y divide-line">

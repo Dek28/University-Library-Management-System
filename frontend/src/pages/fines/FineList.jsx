@@ -108,9 +108,6 @@ function WaiveDialog({ fine, open, onClose, onSaved, symbol }) {
       )}
     >
       <div className="space-y-4">
-        <p className="text-sm text-slate-600">
-          Waiving is recorded against your account in the audit trail, together with the reason you give here.
-        </p>
         <Input
           label="Amount to waive"
           type="number"

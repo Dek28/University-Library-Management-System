@@ -265,8 +265,149 @@ describe('Circulation', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.data.loan.status).toBe('damaged');
-      expect(response.body.data.copyStatus).toBe('under_repair');
+      expect(response.body.data.copyStatus).toBe('damaged');
       expect(response.body.data.fines.some((fine) => fine.fineType === 'damaged')).toBe(true);
+    });
+  });
+
+  describe('Recording the condition on return', () => {
+    const issueAndReturn = async (condition) => {
+      const { resource, copies } = await createResource({ copyCount: 1 });
+      await as(librarian.token).post('/loans/issue', {
+        userIdentifier: 'REG/CIRC/0001', copyIdentifier: copies[0].barcode,
+      });
+      const response = await as(librarian.token).post('/loans/return', { copyIdentifier: copies[0].barcode, condition });
+      expect(response.status).toBe(200);
+      return { resource, copy: copies[0], response };
+    };
+
+    it.each(['excellent', 'good', 'fair'])('records a %s return as returned and puts the copy back in stock', async (condition) => {
+      const { resource, copy, response } = await issueAndReturn(condition);
+
+      expect(response.body.data.loan.status).toBe('returned');
+      expect(response.body.data.copyStatus).toBe('available');
+      expect((await Resource.findById(resource._id)).availableCopies).toBe(1);
+
+      const open = await as(librarian.token).get(`/loans?user=${student.user.id}&openOnly=true`);
+      expect(open.body.data).toHaveLength(0);
+      expect((await User.findById(student.user.id)).activeLoanCount).toBe(0);
+      expect((await ResourceCopy.findById(copy._id)).currentLoan).toBeNull();
+    });
+
+    it('records a return from the loan list by loan id, with the chosen condition', async () => {
+      const { copies } = await createResource({ copyCount: 1 });
+      const issued = await as(librarian.token).post('/loans/issue', {
+        userIdentifier: 'REG/CIRC/0001', copyIdentifier: copies[0].barcode,
+      });
+
+      const response = await as(librarian.token).post('/loans/return', {
+        loanId: issued.body.data.id, condition: 'fair', notes: 'Slight wear on the spine',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.loan.status).toBe('returned');
+      expect(response.body.data.loan.conditionOnReturn).toBe('fair');
+      expect(response.body.data.copyStatus).toBe('available');
+    });
+
+    it('lists a damaged return under damaged copies with the borrower, and clears them from open loans', async () => {
+      const { resource, copy } = await issueAndReturn('damaged');
+
+      const open = await as(librarian.token).get(`/loans?user=${student.user.id}&openOnly=true`);
+      expect(open.body.data).toHaveLength(0);
+      expect((await Resource.findById(resource._id)).availableCopies).toBe(0);
+
+      const damaged = await as(librarian.token).get('/inventory/copies/damaged');
+      const entry = damaged.body.data.find((item) => item.id === String(copy._id));
+      expect(entry).toBeDefined();
+      expect(entry.lastLoan.status).toBe('damaged');
+      expect(entry.lastLoan.borrower.identifier).toBe('REG/CIRC/0001');
+    });
+
+    describe('repairing a damaged copy', () => {
+      const damagedCopy = async () => {
+        const { resource, copy } = await issueAndReturn('damaged');
+        expect((await ResourceCopy.findById(copy._id)).status).toBe('damaged');
+        return { resource, copy };
+      };
+      const adjust = (copy, body) => as(librarian.token).patch(`/inventory/copies/${copy._id}/adjust`, { reason: 'Repaired in the bindery', ...body });
+
+      it('puts the copy back in stock when its condition is set to good', async () => {
+        const { resource, copy } = await damagedCopy();
+
+        const response = await adjust(copy, { status: 'damaged', condition: 'good' });
+
+        expect(response.status).toBe(200);
+        const stored = await ResourceCopy.findById(copy._id);
+        expect(stored.status).toBe('available');
+        expect(stored.condition).toBe('good');
+        expect((await Resource.findById(resource._id)).availableCopies).toBe(1);
+      });
+
+      it('clears the damaged condition when the copy is marked available', async () => {
+        const { copy } = await damagedCopy();
+
+        await adjust(copy, { status: 'available' });
+
+        const stored = await ResourceCopy.findById(copy._id);
+        expect(stored.status).toBe('available');
+        expect(stored.condition).toBe('good');
+      });
+
+      it('does the same when the copy is edited from the catalogue', async () => {
+        const { copy } = await damagedCopy();
+
+        const response = await as(librarian.token).patch(`/resource-copies/${copy._id}`, { condition: 'fair' });
+
+        expect(response.status).toBe(200);
+        expect((await ResourceCopy.findById(copy._id)).status).toBe('available');
+      });
+
+      it('keeps the copy damaged while the condition is still damaged', async () => {
+        const { copy } = await damagedCopy();
+
+        await adjust(copy, { status: 'damaged', condition: 'severely_damaged' });
+
+        expect((await ResourceCopy.findById(copy._id)).status).toBe('damaged');
+      });
+
+      it('does not return a lost copy to stock just because its condition changes', async () => {
+        const { copy } = await issueAndReturn('lost');
+
+        await adjust(copy, { status: 'lost', condition: 'good' });
+
+        expect((await ResourceCopy.findById(copy._id)).status).toBe('lost');
+      });
+
+      it('records the retired under-repair status as damaged', async () => {
+        const { copy } = await issueAndReturn('good');
+
+        await adjust(copy, { status: 'under_repair' });
+
+        expect((await ResourceCopy.findById(copy._id)).status).toBe('damaged');
+      });
+
+      it('moves copies already marked under repair to damaged on startup', async () => {
+        const { copy } = await issueAndReturn('good');
+        await ResourceCopy.updateOne({ _id: copy._id }, { $set: { status: 'under_repair' } });
+
+        await require('../../src/config/database').migrateUnderRepairCopies();
+
+        expect((await ResourceCopy.findById(copy._id)).status).toBe('damaged');
+      });
+    });
+
+    it('lists a lost return under lost copies with the borrower, separately from damaged ones', async () => {
+      const { copy, response } = await issueAndReturn('lost');
+      expect(response.body.data.loan.status).toBe('lost');
+
+      const lost = await as(librarian.token).get('/inventory/copies/lost');
+      const entry = lost.body.data.find((item) => item.id === String(copy._id));
+      expect(entry.lastLoan.status).toBe('lost');
+      expect(entry.lastLoan.borrower.identifier).toBe('REG/CIRC/0001');
+
+      const damaged = await as(librarian.token).get('/inventory/copies/damaged');
+      expect(damaged.body.data.some((item) => item.id === String(copy._id))).toBe(false);
     });
   });
 

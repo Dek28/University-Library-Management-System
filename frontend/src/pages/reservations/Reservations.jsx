@@ -185,10 +185,6 @@ export default function Reservations({ ownOnly = false }) {
           </>
         )}
       >
-        <p className="mb-3 text-sm text-slate-600">
-          If a copy is already being held for this reservation, it is released to the next member in
-          the queue straight away.
-        </p>
         <Textarea label="Reason (optional)" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
       </Modal>
     </>

@@ -219,7 +219,7 @@ describe('Hardening', () => {
       expect(forgot.status).toBe(422);
 
       const reset = await request(app).post(api('/auth/reset-password'))
-        .send({ email: alice.user.email, token: { $ne: null }, newPassword: 'Another#Passw0rd' });
+        .send({ email: alice.user.email, code: { $ne: null }, newPassword: 'Another#Passw0rd' });
       expect(reset.status).toBe(422);
     });
 
@@ -253,11 +253,11 @@ describe('Hardening', () => {
 
     it('stores only a hash of the token and keeps it valid for at most 30 minutes', async () => {
       const response = await requestReset(alice.user.email);
-      const token = response.body.data.token;
+      const token = response.body.data.code;
 
       const stored = await User.findById(alice.user.id).select('+passwordResetTokenHash +passwordResetExpiresAt');
-      expect(token).toMatch(/^[0-9a-f]{64}$/);
-      expect(stored.passwordResetTokenHash).toBe(hashToken(token));
+      expect(token).toMatch(/^\d{6}$/);
+      expect(stored.passwordResetTokenHash).toBe(hashToken(`${alice.user.id}:${token}`));
       expect(stored.passwordResetTokenHash).not.toBe(token);
 
       const lifetime = stored.passwordResetExpiresAt.getTime() - Date.now();
@@ -266,20 +266,20 @@ describe('Hardening', () => {
     });
 
     it('refuses an expired token', async () => {
-      const token = (await requestReset(alice.user.email)).body.data.token;
+      const token = (await requestReset(alice.user.email)).body.data.code;
       await User.updateOne({ _id: alice.user.id }, { $set: { passwordResetExpiresAt: new Date(Date.now() - 1000) } });
 
-      const response = await submitReset({ email: alice.user.email, token, newPassword: 'Expired#Passw0rd' });
+      const response = await submitReset({ email: alice.user.email, code: token, newPassword: 'Expired#Passw0rd' });
 
       expect(response.status).toBe(400);
     });
 
     it('refuses a token that was already used', async () => {
       const carol = await createUser('student', { registrationNumber: 'REG/HARD/CAROL' });
-      const token = (await requestReset(carol.email)).body.data.token;
+      const token = (await requestReset(carol.email)).body.data.code;
 
-      const first = await submitReset({ email: carol.email, token, newPassword: 'First#Passw0rd1' });
-      const second = await submitReset({ email: carol.email, token, newPassword: 'Second#Passw0rd2' });
+      const first = await submitReset({ email: carol.email, code: token, newPassword: 'First#Passw0rd1' });
+      const second = await submitReset({ email: carol.email, code: token, newPassword: 'Second#Passw0rd2' });
 
       expect(first.status).toBe(200);
       expect(second.status).toBe(400);
@@ -290,20 +290,75 @@ describe('Hardening', () => {
 
     it('refuses a token presented with a different account\'s email', async () => {
       const dave = await createUser('student', { registrationNumber: 'REG/HARD/DAVE' });
-      const token = (await requestReset(dave.email)).body.data.token;
+      const token = (await requestReset(dave.email)).body.data.code;
 
-      const response = await submitReset({ email: bob.user.email, token, newPassword: 'Hijack#Passw0rd1' });
+      const response = await submitReset({ email: bob.user.email, code: token, newPassword: 'Hijack#Passw0rd1' });
 
       expect(response.status).toBe(400);
     });
 
     it('invalidates an earlier token when a new one is requested', async () => {
       const erin = await createUser('student', { registrationNumber: 'REG/HARD/ERIN' });
-      const older = (await requestReset(erin.email)).body.data.token;
-      const newer = (await requestReset(erin.email)).body.data.token;
+      const older = (await requestReset(erin.email)).body.data.code;
+      const newer = (await requestReset(erin.email)).body.data.code;
 
-      expect((await submitReset({ email: erin.email, token: older, newPassword: 'Older#Passw0rd1' })).status).toBe(400);
-      expect((await submitReset({ email: erin.email, token: newer, newPassword: 'Newer#Passw0rd1' })).status).toBe(200);
+      expect((await submitReset({ email: erin.email, code: older, newPassword: 'Older#Passw0rd1' })).status).toBe(400);
+      expect((await submitReset({ email: erin.email, code: newer, newPassword: 'Newer#Passw0rd1' })).status).toBe(200);
+    });
+
+    it('emails the code to the account address and nowhere else', async () => {
+      const { outbox } = require('../../src/services/mail.service');
+      outbox.length = 0;
+      const ivan = await createUser('student', { registrationNumber: 'REG/HARD/IVAN' });
+
+      const response = await requestReset(ivan.email);
+      await requestReset('nobody-at-all@example.edu');
+
+      expect(outbox).toHaveLength(1);
+      expect(outbox[0].to).toBe(ivan.email);
+      expect(outbox[0].text).toContain(response.body.data.code);
+      expect(outbox[0].text).toMatch(/expires in \d+ minutes/);
+    });
+
+    it('locks the code after too many wrong guesses, even if the right one follows', async () => {
+      const judy = await createUser('student', { registrationNumber: 'REG/HARD/JUDY' });
+      const code = (await requestReset(judy.email)).body.data.code;
+      const wrong = code === '000000' ? '111111' : '000000';
+
+      for (let i = 0; i < env.security.passwordResetMaxAttempts; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        expect((await submitReset({ email: judy.email, code: wrong, newPassword: 'Guess#Passw0rd1' })).status).toBe(400);
+      }
+
+      const late = await submitReset({ email: judy.email, code, newPassword: 'Judy#Passw0rd1' });
+      expect(late.status).toBe(400);
+    });
+
+    it('rejects a code that is not six digits', async () => {
+      for (const code of ['12345', '1234567', 'abcdef', '12 345']) {
+        // eslint-disable-next-line no-await-in-loop
+        const response = await submitReset({ email: alice.user.email, code, newPassword: 'Whatever#Passw0rd1' });
+        expect(response.status).toBe(422);
+      }
+    });
+
+    it('does not send a second code within the resend interval', async () => {
+      const { outbox } = require('../../src/services/mail.service');
+      const kate = await createUser('student', { registrationNumber: 'REG/HARD/KATE' });
+      const original = env.security.passwordResetResendSeconds;
+      env.security.passwordResetResendSeconds = 60;
+      outbox.length = 0;
+      try {
+        const first = await requestReset(kate.email);
+        const second = await requestReset(kate.email);
+
+        expect(first.status).toBe(200);
+        expect(second.status).toBe(200);
+        expect(second.body.message).toBe(first.body.message);
+        expect(outbox).toHaveLength(1);
+      } finally {
+        env.security.passwordResetResendSeconds = original;
+      }
     });
 
     it('signs out every existing session once the password is reset', async () => {
@@ -311,8 +366,8 @@ describe('Hardening', () => {
       const login = await request(app).post(api('/auth/login')).send({ identifier: frank.user.email, password: PASSWORD });
       const refreshToken = login.body.data.refreshToken;
 
-      const token = (await requestReset(frank.user.email)).body.data.token;
-      await submitReset({ email: frank.user.email, token, newPassword: 'Frank#Passw0rd1' });
+      const token = (await requestReset(frank.user.email)).body.data.code;
+      await submitReset({ email: frank.user.email, code: token, newPassword: 'Frank#Passw0rd1' });
 
       expect((await as(frank.token).get('/auth/me')).status).toBe(401);
       const refresh = await request(app).post(api('/auth/refresh')).send({ refreshToken });
@@ -326,7 +381,7 @@ describe('Hardening', () => {
         const response = await requestReset(alice.user.email);
         expect(response.status).toBe(200);
         expect(response.body.data).toBeNull();
-        expect(JSON.stringify(response.body)).not.toMatch(/[0-9a-f]{64}/);
+        expect(JSON.stringify(response.body)).not.toMatch(/\d{6}/);
       } finally {
         env.exposeDevSecrets = original;
       }

@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Role = require('../models/Role');
@@ -7,7 +8,8 @@ const logger = require('../config/logger');
 const tokenService = require('./token.service');
 const auditService = require('./audit.service');
 const settingsService = require('./settings.service');
-const { randomToken, hashToken } = require('../utils/identifiers');
+const mailService = require('./mail.service');
+const { randomDigits, hashToken } = require('../utils/identifiers');
 
 const PROFILE_POPULATE = [
   { path: 'role', select: 'key name level permissions' },
@@ -15,6 +17,9 @@ const PROFILE_POPULATE = [
   { path: 'faculty', select: 'code name' },
   { path: 'program', select: 'code name level' },
 ];
+
+/** Salted with the account id so one code hashes differently for every account. */
+const hashResetCode = (userId, code) => hashToken(`${userId}:${code}`);
 
 const loadProfile = (userId) => User.findById(userId).populate(PROFILE_POPULATE);
 
@@ -175,49 +180,78 @@ async function changePassword(userId, { currentPassword, newPassword }, context 
 
 /**
  * Always resolves, whether or not the address is registered, because the
- * response must not let a caller enumerate accounts. The token is returned to the
- * caller only outside production, where no mail transport is wired up.
+ * response must not let a caller enumerate accounts. A six-digit code is
+ * emailed to the account's address and only its hash is stored. The code is
+ * returned to the caller solely when development secrets are exposed.
  */
 async function requestPasswordReset(email, context = {}) {
-  const user = await User.findOne({ email: email.toLowerCase().trim() });
+  const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+passwordResetExpiresAt');
   if (!user) return { delivered: false };
 
-  const token = randomToken(32);
-  user.passwordResetTokenHash = hashToken(token);
-  user.passwordResetExpiresAt = new Date(Date.now() + env.security.passwordResetMinutes * 60_000);
+  const lifetimeMs = env.security.passwordResetMinutes * 60_000;
+  const issuedAt = user.passwordResetExpiresAt ? user.passwordResetExpiresAt.getTime() - lifetimeMs : 0;
+  if (Date.now() - issuedAt < env.security.passwordResetResendSeconds * 1000) {
+    return { delivered: false };
+  }
+
+  const code = randomDigits(6);
+  user.passwordResetTokenHash = hashResetCode(user._id, code);
+  user.passwordResetExpiresAt = new Date(Date.now() + lifetimeMs);
+  user.passwordResetAttempts = 0;
   await user.save({ validateBeforeSave: false });
 
-  const resetUrl = `${env.frontendUrl}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
-  // Without a mail transport the link can only be shown in development; anywhere
-  // else it must never reach the logs, where it would grant account access.
-  logger.info(env.exposeDevSecrets
-    ? `Password reset requested for ${user.email}. Reset link: ${resetUrl}`
-    : 'Password reset requested');
+  // Sent in the background so the response takes the same time for every address.
+  mailService.sendMail({
+    to: user.email,
+    subject: 'Your password reset code',
+    text: `Your password reset code is ${code}.
+
+`
+      + `It expires in ${env.security.passwordResetMinutes} minutes and can be used once. `
+      + 'If you did not ask to reset your password, you can ignore this email.',
+  }).catch((err) => logger.error(`Could not send the password reset email: ${err.message}`));
+
+  if (env.exposeDevSecrets) logger.info(`Password reset code for ${user.email}: ${code}`);
 
   await auditService.record({
     ...context, actor: user, action: 'password_reset', entityType: 'User', entityId: user._id,
-    description: 'Password reset requested',
+    description: 'Password reset code requested',
   });
 
-  return {
-    delivered: true,
-    devToken: env.exposeDevSecrets ? token : undefined,
-    resetUrl: env.exposeDevSecrets ? resetUrl : undefined,
-  };
+  return { delivered: true, devCode: env.exposeDevSecrets ? code : undefined };
 }
 
-async function resetPassword({ token, email, newPassword }, context = {}) {
-  const user = await User.findOne({
-    email: email.toLowerCase().trim(),
-    passwordResetTokenHash: hashToken(token),
-    passwordResetExpiresAt: { $gt: new Date() },
-  }).select('+password +passwordResetTokenHash +passwordResetExpiresAt');
+async function resetPassword({ code, email, newPassword }, context = {}) {
+  const invalid = ApiError.badRequest('The code is invalid or has expired');
 
-  if (!user) throw ApiError.badRequest('Password reset link is invalid or has expired');
+  // Counting the attempt and checking the limit happen in one atomic update, so
+  // parallel guesses cannot exceed the allowance.
+  const user = await User.findOneAndUpdate(
+    {
+      email: email.toLowerCase().trim(),
+      passwordResetTokenHash: { $ne: null },
+      passwordResetExpiresAt: { $gt: new Date() },
+      passwordResetAttempts: { $lt: env.security.passwordResetMaxAttempts },
+    },
+    { $inc: { passwordResetAttempts: 1 } },
+    { new: true },
+  ).select('+password +passwordResetTokenHash +passwordResetExpiresAt +passwordResetAttempts');
+
+  if (!user) throw invalid;
+
+  const expected = Buffer.from(user.passwordResetTokenHash);
+  const given = Buffer.from(hashResetCode(user._id, code));
+  if (expected.length !== given.length || !crypto.timingSafeEqual(expected, given)) {
+    if (user.passwordResetAttempts >= env.security.passwordResetMaxAttempts) {
+      logger.warn(`Password reset code locked after repeated wrong attempts (user ${user._id}, ip ${context.req?.clientIp || 'unknown'})`);
+    }
+    throw invalid;
+  }
 
   user.password = newPassword;
   user.passwordResetTokenHash = null;
   user.passwordResetExpiresAt = null;
+  user.passwordResetAttempts = 0;
   user.mustChangePassword = false;
   await user.save();
 

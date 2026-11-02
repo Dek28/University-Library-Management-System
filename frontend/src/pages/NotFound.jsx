@@ -12,9 +12,6 @@ export default function NotFound() {
           </span>
           <p className="text-3xl font-bold leading-none text-slate-900">404</p>
           <p className="mt-2 text-md font-semibold text-slate-800">This page does not exist</p>
-          <p className="mt-1 text-sm text-slate-500">
-            The link may be out of date, or the record may have been removed.
-          </p>
           <div className="mt-5 flex gap-2">
             <Button as={Link} to="/dashboard">Go to dashboard</Button>
             <Button as={Link} to="/catalog" variant="secondary">Search the catalogue</Button>

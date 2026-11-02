@@ -1,15 +1,8 @@
 import { Outlet } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Repeat, UserRound } from 'lucide-react';
 
 import { adminApi } from '../api/endpoints';
 import { BRAND } from '../constants';
-
-const FEATURES = [
-  { icon: BookOpen, title: 'Library catalogue', text: 'Books, journals, research and theses' },
-  { icon: Repeat, title: 'Borrowing made simple', text: 'Loans, renewals and reservations' },
-  { icon: UserRound, title: 'Your academic account', text: 'Records and library clearance' },
-];
 
 /**
  * Shell for the sign-in, forgot-password and reset-password screens.
@@ -50,52 +43,17 @@ export default function AuthLayout() {
                 {BRAND.name}
               </p>
 
-              <p className="mt-0.5 text-[11px] leading-tight text-[#ABC9F1]">
-                University Library Management System
-              </p>
             </div>
 
           </div>
 
           {/* Message */}
           <div className="my-auto max-w-[360px] py-6">
-
-            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8AC0FF]">
-              Discover &bull; Learn &bull; Grow
-            </p>
-
-            <p className="mt-3 text-[28px] font-bold leading-[1.28] tracking-tight text-white xl:text-[38px]">
+            <p className="text-[28px] font-bold leading-[1.28] tracking-tight text-white xl:text-[38px]">
               Your gateway
               <br />
               to knowledge.
             </p>
-
-            <p className="mt-3 max-w-[340px] text-[13px] leading-6 text-[#ABC9F1]">
-              Explore academic resources and manage your library services in one secure space.
-            </p>
-
-            <ul className="mt-7 space-y-5 xl:mt-8">
-              {FEATURES.map(({ icon: Icon, title, text }) => (
-                <li key={title} className="flex items-center gap-3.5">
-
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#275083]">
-                    <Icon className="h-4 w-4 text-[#8AC0FF]" aria-hidden="true" />
-                  </span>
-
-                  <div>
-                    <p className="text-[13px] font-bold leading-tight text-white">
-                      {title}
-                    </p>
-
-                    <p className="mt-0.5 text-xs text-[#ABC9F1]">
-                      {text}
-                    </p>
-                  </div>
-
-                </li>
-              ))}
-            </ul>
-
           </div>
 
         </div>
@@ -121,9 +79,6 @@ export default function AuthLayout() {
                 {BRAND.name}
               </p>
 
-              <p className="mt-0.5 text-xs leading-tight text-[#71829A]">
-                University Library Management System
-              </p>
             </div>
 
           </div>

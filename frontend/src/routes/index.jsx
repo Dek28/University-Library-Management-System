@@ -27,7 +27,6 @@ const load = (factory) => {
 // Auth
 const Login = () => import('../pages/auth/Login');
 const ForgotPassword = () => import('../pages/auth/ForgotPassword');
-const ResetPassword = () => import('../pages/auth/ResetPassword');
 
 // Core
 const Dashboard = () => import('../pages/dashboard/index.jsx');
@@ -110,7 +109,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/login', element: load(Login) },
           { path: '/forgot-password', element: load(ForgotPassword) },
-          { path: '/reset-password', element: load(ResetPassword) },
+          { path: '/reset-password', element: <Navigate to="/forgot-password" replace /> },
         ],
       },
     ],

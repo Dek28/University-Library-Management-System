@@ -166,7 +166,6 @@ export default function Settings() {
                   disabled={!editable}
                   value={draft.locale.timezone || ''}
                   onChange={(e) => patch('locale.timezone', e.target.value)}
-                  hint="Dates are stored in UTC and displayed in this zone."
                 />
                 <Input label="Maximum upload size (MB)" type="number" disabled={!editable} value={draft.uploads.maxFileSizeMb} onChange={(e) => patch('uploads.maxFileSizeMb', Number(e.target.value))} />
               </div>
@@ -175,7 +174,7 @@ export default function Settings() {
         )}
 
         {tab === 'borrowing' && (
-          <Card title="Borrowing entitlements" subtitle="What each role may take, and for how long">
+          <Card title="Borrowing entitlements">
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
@@ -211,16 +210,11 @@ export default function Settings() {
                 </tbody>
               </table>
             </div>
-            {chargesFines && (
-              <p className="mt-3 text-xs text-slate-500">
-                A blocking fine threshold of 0 means unpaid fines never block borrowing for that role.
-              </p>
-            )}
           </Card>
         )}
 
         {tab === 'fines' && chargesFines && (
-          <Card title="Fine policies" subtitle="Applied per resource type, falling back to the default policy">
+          <Card title="Fine policies">
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
@@ -258,10 +252,6 @@ export default function Settings() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-3 text-xs text-slate-500">
-              A lost copy is charged its own replacement cost multiplied by the factor above; the base
-              lost-item fine applies only when no replacement cost is recorded.
-            </p>
           </Card>
         )}
 
@@ -274,7 +264,6 @@ export default function Settings() {
                 disabled={!editable}
                 value={draft.circulation.reservationExpiryDays}
                 onChange={(e) => patch('circulation.reservationExpiryDays', Number(e.target.value))}
-                hint="How long a held copy waits before passing to the next member."
               />
               <Input
                 label="Due-soon reminder (days before)"
@@ -386,10 +375,6 @@ export default function Settings() {
                 onChange={(e) => patch('security.maxFailedLogins', Number(e.target.value))}
               />
             </div>
-            <p className="mt-4 text-xs text-slate-500">
-              Password complexity, token lifetimes and rate limits are enforced by the API and configured
-              through environment variables, not from this screen.
-            </p>
           </Card>
         )}
 

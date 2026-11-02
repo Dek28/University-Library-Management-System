@@ -242,7 +242,7 @@ async function returnLoan({ copyIdentifier, loanId, condition = 'good', notes },
     const nextStatus = {
       lost: 'lost',
       severely_damaged: 'damaged',
-      damaged: 'under_repair',
+      damaged: 'damaged',
     }[condition] || 'available';
 
     await ResourceCopy.updateOne(

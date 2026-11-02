@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { Eye, RefreshCw, PackageX, Printer } from 'lucide-react';
+import { AlertTriangle, Eye, RefreshCw, PackageCheck, PackageX, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   PageHeader,
@@ -21,7 +21,7 @@ import { loanApi } from '../../api/endpoints';
 import useListQuery from '../../hooks/useListQuery';
 import { useAuthStore } from '../../store/auth';
 import useFinesEnabled from '../../hooks/useFinesEnabled';
-import { P } from '../../constants';
+import { P, COPY_CONDITIONS } from '../../constants';
 import { formatDate, formatMoney, fullName, memberIdentifier, daysUntil, truncate } from '../../utils/format';
 
 const TABS = [
@@ -44,6 +44,9 @@ export default function LoanList({ ownOnly = false, title = 'Circulation', defau
 
   const [tab, setTab] = useState(initialTab);
   const [renewTarget, setRenewTarget] = useState(null);
+  const [returnTarget, setReturnTarget] = useState(null);
+  const [returnCondition, setReturnCondition] = useState('');
+  const [returnNotes, setReturnNotes] = useState('');
   const [lostTarget, setLostTarget] = useState(null);
   const [lostReason, setLostReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -72,6 +75,27 @@ export default function LoanList({ ownOnly = false, title = 'Circulation', defau
       const updated = await loanApi.renew(renewTarget.id);
       toast.success(`Renewed. New due date: ${formatDate(updated.dueDate)}`);
       setRenewTarget(null);
+      list.refetch();
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openReturn = (loan) => {
+    setReturnTarget(loan);
+    setReturnCondition('');
+    setReturnNotes('');
+  };
+
+  const markReturned = async () => {
+    setBusy(true);
+    try {
+      const result = await loanApi.return({ loanId: returnTarget.id, condition: returnCondition, notes: returnNotes });
+      const fines = result?.fines?.length || 0;
+      toast.success(fines && finesEnabled ? 'Returned. A charge was added to the member.' : 'Marked as returned');
+      setReturnTarget(null);
       list.refetch();
     } catch (error) {
       toast.error(error.message);
@@ -176,6 +200,9 @@ export default function LoanList({ ownOnly = false, title = 'Circulation', defau
         return (
           <div className="flex justify-end gap-0.5">
             <IconButton icon={Eye} label="View loan" onClick={() => { window.location.href = `/circulation/loans/${row.id}`; }} />
+            {isOpen && !ownOnly && can(P.LOAN_RETURN) && (
+              <IconButton icon={PackageCheck} label="Mark as returned" tone="success" onClick={() => openReturn(row)} />
+            )}
             {canRenew && row.renewalCount < row.maxRenewals && (
               <IconButton icon={RefreshCw} label="Renew" tone="success" onClick={() => setRenewTarget(row)} />
             )}
@@ -275,6 +302,41 @@ export default function LoanList({ ownOnly = false, title = 'Circulation', defau
         confirmLabel="Renew loan"
         message={`"${renewTarget?.resource?.title}" will be extended by the borrower's standard renewal period. Renewal is refused if another member is waiting for this title.`}
       />
+
+      <Modal
+        open={Boolean(returnTarget)}
+        onClose={() => setReturnTarget(null)}
+        title="Mark as returned"
+        description={returnTarget ? `${returnTarget.resource?.title} · ${fullName(returnTarget.user)}` : ''}
+        size="sm"
+        footer={(
+          <>
+            <Button variant="secondary" onClick={() => setReturnTarget(null)}>Cancel</Button>
+            <Button onClick={markReturned} loading={busy} disabled={!returnCondition}>Mark as returned</Button>
+          </>
+        )}
+      >
+        <div className="space-y-4">
+          <Select
+            label="Condition of the book"
+            required
+            placeholder="Select the condition first"
+            options={COPY_CONDITIONS}
+            value={returnCondition}
+            onChange={(e) => setReturnCondition(e.target.value)}
+          />
+          {['damaged', 'severely_damaged', 'lost'].includes(returnCondition) && (
+            <div className="flex items-start gap-2.5 rounded-md border border-amber-200 bg-amber-50 px-3.5 py-2.5">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+              <p className="text-sm text-amber-800">
+                {returnCondition === 'lost' ? 'The copy will be listed under Lost' : 'The copy will be listed under Damaged'}
+                {finesEnabled && ' and a charge is raised against the member'}. It is not counted as available.
+              </p>
+            </div>
+          )}
+          <Textarea label="Remarks (optional)" rows={2} value={returnNotes} onChange={(e) => setReturnNotes(e.target.value)} />
+        </div>
+      </Modal>
 
       <Modal
         open={Boolean(lostTarget)}

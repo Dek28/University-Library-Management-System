@@ -226,7 +226,6 @@ export default function CatalogImport() {
           {inspection && (
             <Card
               title="2. Match columns to the catalogue form"
-              subtitle="Headings were matched automatically. Check each one and change any that are wrong."
               noPadding
             >
               <div className="divide-y divide-line">
@@ -376,10 +375,6 @@ export default function CatalogImport() {
         {/* Help */}
         <div className="space-y-4">
           <Card title="Use the template (optional)">
-            <p className="text-sm text-slate-600">
-              The template has one column per Add Book field, headed with the form's own labels, and drop-down lists
-              filled from your categories, languages and shelves.
-            </p>
             <Button
               variant="secondary"
               className="mt-3"
@@ -387,10 +382,6 @@ export default function CatalogImport() {
             >
               Download template
             </Button>
-            <p className="mt-3 text-xs text-slate-500">
-              Your own spreadsheet works too. Headings such as "Author", "Year Published", "Shelf Location" or "Qty"
-              are recognised, and you can match any column by hand in step 2.
-            </p>
           </Card>
 
           <Card title="How values are read">

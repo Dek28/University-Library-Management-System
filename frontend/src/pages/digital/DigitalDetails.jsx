@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Download, FileText, Eye } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   PageHeader, Card, Button, DetailRow, Badge, PageLoader, ErrorState,
@@ -107,11 +107,6 @@ export default function DigitalDetails() {
               <DetailRow label="Downloads">{item.downloadCount || 0}</DetailRow>
               <DetailRow label="Views">{item.viewCount || 0}</DetailRow>
             </dl>
-            <p className="mt-3 flex items-start gap-2 rounded-md bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
-              <Eye className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              Files are streamed through an authorised endpoint. The storage location is never exposed,
-              so the access level cannot be bypassed with a direct link.
-            </p>
           </Card>
         </div>
       </div>

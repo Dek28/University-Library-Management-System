@@ -26,6 +26,7 @@ const userSchema = new Schema(
     passwordChangedAt: { type: Date, default: null },
     passwordResetTokenHash: { type: String, select: false, default: null },
     passwordResetExpiresAt: { type: Date, select: false, default: null },
+    passwordResetAttempts: { type: Number, select: false, default: 0 },
     mustChangePassword: { type: Boolean, default: false },
 
     role: { type: Schema.Types.ObjectId, ref: 'Role', required: true, index: true },

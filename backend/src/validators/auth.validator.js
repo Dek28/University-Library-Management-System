@@ -14,7 +14,7 @@ const forgotPasswordSchema = z.object({ email });
 
 const resetPasswordSchema = z.object({
   email,
-  token: z.string().min(20, 'Reset token is invalid'),
+  code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code from your email'),
   newPassword: password,
 });
 

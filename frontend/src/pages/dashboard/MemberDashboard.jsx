@@ -129,7 +129,6 @@ export default function MemberDashboard() {
       <Card
         className="mt-3"
         title="Recommended for you"
-        subtitle="Based on the subjects you have borrowed from"
         actions={<Button as={Link} to="/catalog" variant="secondary" size="sm">Browse catalogue</Button>}
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

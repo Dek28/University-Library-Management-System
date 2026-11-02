@@ -226,7 +226,6 @@ export default function DigitalLibrary() {
               <EmptyState
                 icon={FileText}
                 title="Nothing in the repository yet"
-                description="Uploaded theses, papers and reports you are allowed to see will appear here."
                 action={can(P.DIGITAL_UPLOAD) ? <Button size="sm" onClick={() => setUploadOpen(true)}>Upload the first item</Button> : undefined}
               />
             ) : (

@@ -50,7 +50,6 @@ export default function Login() {
       remember: true,
     },
   });
-
   const onSubmit = async (values) => {
     setFormError(null);
 
@@ -78,7 +77,7 @@ export default function Login() {
     } catch (error) {
       setFormError(
         error?.message ||
-        'Unable to sign in. Please check your credentials and try again.',
+        'Unable to sign in. Please try again.',
       );
     }
   };
@@ -86,20 +85,9 @@ export default function Login() {
   return (
     <section className="w-full">
 
-      {/* Heading */}
-      <div className="mb-6">
-        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#2C62D2]">
-          Account Access
-        </p>
-
-        <h1 className="mt-2.5 text-[24px] font-bold leading-tight tracking-tight text-[#12233C]">
-          Welcome back
-        </h1>
-
-        <p className="mt-1.5 text-sm leading-5 text-[#71829A]">
-          Sign in using your university credentials.
-        </p>
-      </div>
+      <h1 className="mb-6 text-[24px] font-bold leading-tight tracking-tight text-[#12233C]">
+        Welcome back
+      </h1>
 
       {/* Error message */}
       {formError && (
@@ -126,7 +114,6 @@ export default function Login() {
       >
         <AuthInput
           label="Email, Registration Number or Staff ID"
-          placeholder="e.g. REG/2026/001"
           autoComplete="username"
           autoFocus
           error={errors.identifier?.message}
@@ -135,7 +122,6 @@ export default function Login() {
 
         <AuthPasswordInput
           label="Password"
-          placeholder="Enter your password"
           autoComplete="current-password"
           error={errors.password?.message}
           {...register('password')}

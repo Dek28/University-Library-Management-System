@@ -51,7 +51,10 @@ const env = {
     bcryptRounds: int(process.env.BCRYPT_ROUNDS, process.env.NODE_ENV === 'test' ? 4 : 12),
     maxFailedLogins: int(process.env.MAX_FAILED_LOGINS, 5),
     lockMinutes: int(process.env.ACCOUNT_LOCK_MINUTES, 15),
-    passwordResetMinutes: int(process.env.PASSWORD_RESET_MINUTES, 30),
+    passwordResetMinutes: int(process.env.PASSWORD_RESET_MINUTES, 10),
+    passwordResetMaxAttempts: int(process.env.PASSWORD_RESET_MAX_ATTEMPTS, 5),
+    // Minimum gap before another code is sent to the same account.
+    passwordResetResendSeconds: int(process.env.PASSWORD_RESET_RESEND_SECONDS, process.env.NODE_ENV === 'test' ? 0 : 60),
     rateLimitWindowMs: int(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
     rateLimitMax: int(process.env.RATE_LIMIT_MAX, 600),
     authRateLimitMax: int(process.env.AUTH_RATE_LIMIT_MAX, 20),
@@ -66,6 +69,16 @@ const env = {
   },
 
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+
+  // Outgoing email (password reset codes). Without SMTP_HOST nothing is sent.
+  mail: {
+    host: process.env.SMTP_HOST || '',
+    port: int(process.env.SMTP_PORT, 587),
+    secure: bool(process.env.SMTP_SECURE, false),
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.MAIL_FROM || 'University Library <no-reply@localhost>',
+  },
 
   storage: {
     driver: process.env.STORAGE_DRIVER || 'local',

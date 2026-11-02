@@ -96,7 +96,6 @@ function MemberPicker({ selected, onChange, leader, onLeaderChange, current = []
               value={leader || ''}
               onChange={(e) => onLeaderChange(e.target.value)}
               options={selected.map((id) => ({ value: id, label: known[id] ? fullName(known[id]) : id.slice(-6) }))}
-              hint="The leader is always kept as a member of the group."
             />
           </div>
         </>

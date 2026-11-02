@@ -58,7 +58,6 @@ function ReceiveDialog({ order, open, onClose, onDone }) {
       open={open}
       onClose={onClose}
       title="Receive delivery"
-      description="Copies are added to the catalogue with new barcodes. Titles not yet catalogued are created automatically."
       size="lg"
       footer={(
         <>

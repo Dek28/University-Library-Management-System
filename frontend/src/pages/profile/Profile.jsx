@@ -157,7 +157,7 @@ export default function Profile() {
 
         <div className="min-w-0">
           {tab === 'profile' && (
-            <Card title="Editable details" subtitle="Ask the library to change anything not shown here.">
+            <Card title="Editable details">
               <form onSubmit={profileForm.handleSubmit(saveProfile)} className="space-y-4" noValidate>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Input label="Full name" value={fullName(user)} disabled />
@@ -240,10 +240,6 @@ export default function Profile() {
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-xs text-slate-500">
-                These permissions are granted by your role. Every one of them is enforced by the server
-                on each request. The interface only uses them to hide actions you cannot take.
-              </p>
             </Card>
           )}
         </div>

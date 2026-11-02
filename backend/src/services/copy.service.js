@@ -110,10 +110,36 @@ async function createBatch({ resource: resourceId, quantity, ...shared }, actor,
 
 const MANUAL_STATUSES = ['available', 'damaged', 'lost', 'missing', 'withdrawn', 'under_repair', 'reference_only'];
 
+const SOUND_CONDITIONS = ['excellent', 'good', 'fair'];
+const DAMAGED_CONDITIONS = ['damaged', 'severely_damaged'];
+
+/**
+ * A manual edit that repairs a damaged copy puts it back in stock:
+ * moving the condition to excellent, good or fair, or the status to available,
+ * makes the copy available. Marking it available also clears a leftover
+ * damaged condition. `under_repair` is no longer a separate state; it is
+ * recorded as damaged.
+ */
+function resolveRepair(copy, { status, condition }) {
+  let nextStatus = status === 'under_repair' ? 'damaged' : status;
+  let nextCondition = condition;
+
+  if (copy.status === 'damaged') {
+    const effectiveCondition = condition || copy.condition;
+    if ((!nextStatus || nextStatus === 'damaged') && SOUND_CONDITIONS.includes(condition)) nextStatus = 'available';
+    if (nextStatus === 'available' && DAMAGED_CONDITIONS.includes(effectiveCondition)) nextCondition = 'good';
+  }
+  return { status: nextStatus, condition: nextCondition };
+}
+
 async function update(id, payload, actor, context = {}) {
   const copy = await ResourceCopy.findById(id);
   if (!copy) throw ApiError.notFound('Copy not found');
   const before = copy.toObject();
+
+  const repaired = resolveRepair(copy, payload);
+  // eslint-disable-next-line no-param-reassign
+  payload = { ...payload, ...(repaired.status && { status: repaired.status }), ...(repaired.condition && { condition: repaired.condition }) };
 
   // `borrowed`/`reserved` are owned by circulation, not by manual edits.
   if (payload.status && !MANUAL_STATUSES.includes(payload.status)) {
@@ -160,4 +186,6 @@ async function remove(id, actor, context = {}) {
   return true;
 }
 
-module.exports = { list, getById, findByIdentifier, create, createBatch, update, remove, nextAccessionNumber };
+module.exports = {
+  list, getById, findByIdentifier, create, createBatch, update, remove, nextAccessionNumber, resolveRepair,
+};

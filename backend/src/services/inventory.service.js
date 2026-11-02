@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const InventoryAudit = require('../models/InventoryAudit');
 const ResourceCopy = require('../models/ResourceCopy');
+const Loan = require('../models/Loan');
 const ApiError = require('../utils/ApiError');
 const auditService = require('./audit.service');
 const resourceService = require('./resource.service');
@@ -37,12 +38,46 @@ async function stockSummary({ shelf, category } = {}) {
 async function listCopiesByStatus(status, query = {}) {
   const pagination = buildPagination(query, { defaultSort: 'accessionNumber', defaultLimit: 50 });
   const filter = compact({ status, shelf: query.shelf });
-  return paginate(ResourceCopy, filter, pagination, {
+  const result = await paginate(ResourceCopy, filter, pagination, {
     populate: [
       { path: 'resource', select: 'title resourceType' },
       { path: 'shelf', select: 'name section rack' },
     ],
   });
+
+  // The damaged and lost lists also say who had the copy and when it was recorded.
+  if (['damaged', 'lost'].includes(status) && result.items.length) {
+    const loans = await Loan.find({
+      copy: { $in: result.items.map((copy) => copy.id) },
+      status: { $in: ['damaged', 'lost'] },
+    })
+      .sort('-updatedAt')
+      .populate({ path: 'user', select: 'firstName lastName registrationNumber employeeId' })
+      .lean();
+
+    const latest = new Map();
+    loans.forEach((loan) => { if (!latest.has(String(loan.copy))) latest.set(String(loan.copy), loan); });
+
+    result.items = result.items.map((copy) => {
+      const loan = latest.get(String(copy.id));
+      return {
+        ...copy,
+        lastLoan: loan ? {
+          id: String(loan._id),
+          transactionId: loan.transactionId,
+          status: loan.status,
+          recordedAt: loan.returnDate || loan.updatedAt,
+          borrower: loan.user ? {
+            id: String(loan.user._id),
+            fullName: `${loan.user.firstName} ${loan.user.lastName}`.trim(),
+            identifier: loan.user.registrationNumber || loan.user.employeeId || '',
+          } : null,
+        } : null,
+      };
+    });
+  }
+
+  return result;
 }
 
 async function listAudits(query = {}) {
@@ -236,8 +271,9 @@ async function adjustCopy(copyId, { status, condition, reason }, actor, context 
   }
 
   const before = { status: copy.status, condition: copy.condition };
-  copy.status = status;
-  if (condition) copy.condition = condition;
+  const repaired = require('./copy.service').resolveRepair(copy, { status, condition });
+  copy.status = repaired.status;
+  if (repaired.condition) copy.condition = repaired.condition;
   copy.notes = reason ? `${copy.notes} | ${reason}`.trim() : copy.notes;
   copy.updatedBy = actor._id;
   await copy.save();

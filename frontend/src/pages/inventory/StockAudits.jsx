@@ -46,7 +46,6 @@ function StartAuditDialog({ open, onClose, onStarted }) {
       open={open}
       onClose={onClose}
       title="Start a stock verification"
-      description="Only one verification can be open at a time."
       size="sm"
       footer={(
         <>
@@ -63,7 +62,6 @@ function StartAuditDialog({ open, onClose, onStarted }) {
           options={(shelves?.items || []).map((s) => ({ value: s.id, label: shelfLabel(s) }))}
           value={shelf}
           onChange={(e) => setShelf(e.target.value)}
-          hint="The expected count is snapshotted when the verification starts."
         />
         <Textarea label="Description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
@@ -229,9 +227,6 @@ export function AuditDetails() {
               onChange={(e) => setRemark(e.target.value)}
             />
           </form>
-          <p className="mt-3 text-xs text-slate-500">
-            Re-scanning a copy replaces its earlier entry, so a corrected scan never double-counts.
-          </p>
         </Card>
       )}
 

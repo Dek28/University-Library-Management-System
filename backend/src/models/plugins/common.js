@@ -16,6 +16,8 @@ function toJSONPlugin(schema) {
       // Never serialise secrets even if a caller forgets to `.select('-x')`.
       delete ret.password;
       delete ret.passwordResetTokenHash;
+      delete ret.passwordResetExpiresAt;
+      delete ret.passwordResetAttempts;
       delete ret.tokenHash;
       return ret;
     },

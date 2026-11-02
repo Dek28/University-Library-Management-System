@@ -154,15 +154,15 @@ describe('Authentication and authorization', () => {
     it('resets the password with a valid token and refuses an invalid one', async () => {
       const user = await createUser('student');
       const requested = await request(app).post(api('/auth/forgot-password')).send({ email: user.email });
-      const token = requested.body.data.token;
+      const token = requested.body.data.code;
       expect(token).toEqual(expect.any(String));
 
       const wrongToken = await request(app).post(api('/auth/reset-password'))
-        .send({ email: user.email, token: 'x'.repeat(64), newPassword: 'AnotherPass1!' });
+        .send({ email: user.email, code: token === '000000' ? '111111' : '000000', newPassword: 'AnotherPass1!' });
       expect(wrongToken.status).toBe(400);
 
       const reset = await request(app).post(api('/auth/reset-password'))
-        .send({ email: user.email, token, newPassword: 'AnotherPass1!' });
+        .send({ email: user.email, code: token, newPassword: 'AnotherPass1!' });
       expect(reset.status).toBe(200);
 
       const signIn = await request(app).post(api('/auth/login'))

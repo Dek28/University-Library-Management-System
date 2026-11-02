@@ -151,13 +151,12 @@ export default function UploadDialog({ open, onClose, onSaved }) {
         </div>
 
         <Textarea label="Abstract" rows={4} error={errors.abstract?.message} {...register('abstract')} />
-        <Input label="Keywords" placeholder="Comma-separated" hint="Used by repository search." {...register('keywords')} />
+        <Input label="Keywords" placeholder="Comma-separated" {...register('keywords')} />
 
         <Select
           label="Access level"
           required
           options={ACCESS_LEVELS}
-          hint="The API enforces this on every read and download, so a direct link cannot bypass it."
           error={errors.accessLevel?.message}
           {...register('accessLevel')}
         />

@@ -178,14 +178,13 @@ export default function Reports() {
 
       <Card
         title={report?.title || 'Report results'}
-        subtitle={criteria ? `${from} to ${to}` : 'Choose a report and select Generate Report'}
+        subtitle={criteria ? `${from} to ${to}` : undefined}
         noPadding
       >
         {!criteria ? (
           <EmptyState
             icon={BarChart3}
             title="No report generated yet"
-            description="Pick a report type and date range above, then choose Generate Report."
           />
         ) : isFetching && !report ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
@@ -193,7 +192,7 @@ export default function Reports() {
           <>
             <div className="border-b border-line px-5 py-2.5">
               <p className="text-xs text-slate-500">
-                {formatNumber(report?.rows?.length || 0)} row(s). Exports use exactly these rows and filters.
+                {formatNumber(report?.rows?.length || 0)} row(s).
               </p>
             </div>
             <DataTable

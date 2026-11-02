@@ -610,7 +610,6 @@ export default function ResourceForm() {
               label="Shelf (location)"
               placeholder="No shelf assigned"
               options={shelfOptions}
-              hint="Where this book is kept. New copies are placed on this shelf automatically."
               error={errors.shelf?.message}
               {...register('shelf')}
             />
@@ -628,7 +627,6 @@ export default function ResourceForm() {
             <TagInput
               label="Authors"
               placeholder="Type an author's full name and press Enter"
-              hint="New authors are registered automatically when the book is saved."
               value={authorNames}
               onChange={setAuthorNames}
             />
@@ -671,7 +669,6 @@ export default function ResourceForm() {
             <TagInput
               label="Keywords"
               placeholder="Type a keyword and press Enter"
-              hint="Keywords power the catalogue's free-text search."
               value={keywords}
               onChange={setKeywords}
               normalise={(text) => text.toLowerCase()}

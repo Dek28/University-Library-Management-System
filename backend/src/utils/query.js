@@ -1,7 +1,7 @@
 const MAX_LIMIT = 200;
 
 /** Fields that must never appear in a response or be used as a sort key. */
-const SENSITIVE_FIELDS = ['password', 'tokenHash', 'passwordResetTokenHash', 'passwordResetExpiresAt', 'storageKey'];
+const SENSITIVE_FIELDS = ['password', 'tokenHash', 'passwordResetTokenHash', 'passwordResetExpiresAt', 'passwordResetAttempts', 'storageKey'];
 
 /**
  * Row ceiling for a full export.

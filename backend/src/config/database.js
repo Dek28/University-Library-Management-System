@@ -33,6 +33,20 @@ async function dropSupersededIndexes() {
   }
 }
 
+/**
+ * `under_repair` is no longer a separate state: those copies are counted as
+ * damaged, and become available again once repaired. Safe to repeat.
+ */
+async function migrateUnderRepairCopies() {
+  try {
+    const result = await mongoose.connection.collection('resourcecopies')
+      .updateMany({ status: 'under_repair' }, { $set: { status: 'damaged' } });
+    if (result.modifiedCount) logger.info(`Moved ${result.modifiedCount} under-repair copies to damaged`);
+  } catch (err) {
+    logger.warn(`Could not migrate under-repair copies: ${err.message}`);
+  }
+}
+
 const supportsTransactions = () => transactionsSupported === true;
 
 async function connectDatabase(uri = env.isTest ? env.mongoUriTest : env.mongoUri) {
@@ -43,6 +57,7 @@ async function connectDatabase(uri = env.isTest ? env.mongoUriTest : env.mongoUr
   });
   logger.info(`MongoDB connected: ${mongoose.connection.name}`);
   await dropSupersededIndexes();
+  await migrateUnderRepairCopies();
   await detectTransactionSupport();
   return mongoose.connection;
 }
@@ -51,4 +66,6 @@ async function disconnectDatabase() {
   if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
 }
 
-module.exports = { connectDatabase, disconnectDatabase, supportsTransactions, detectTransactionSupport };
+module.exports = {
+  connectDatabase, disconnectDatabase, supportsTransactions, detectTransactionSupport, migrateUnderRepairCopies,
+};

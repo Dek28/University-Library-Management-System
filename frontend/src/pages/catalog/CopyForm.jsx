@@ -104,7 +104,6 @@ export default function CopyForm({ open, onClose, resource, copy, onSaved }) {
             min={1}
             max={100}
             required
-            hint="Accession numbers and barcodes are generated automatically."
             error={errors.quantity?.message}
             {...register('quantity')}
           />

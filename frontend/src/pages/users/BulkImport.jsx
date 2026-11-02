@@ -245,10 +245,6 @@ export default function BulkImport() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-xs text-slate-500">
-            A row with an email or registration number that already exists is reported and skipped.
-            The rest of the file is still imported.
-          </p>
         </Card>
       </div>
     </>
