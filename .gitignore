@@ -29,5 +29,5 @@ coverage/
 .DS_Store
 Thumbs.db
 .claude/
-docs/
+/docs/
 .vite/
