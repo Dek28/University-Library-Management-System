@@ -3,9 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
-// The proxy makes API calls same-origin from the browser's point of view, so
-// the Origin header is dropped: the API's CORS allow-list only names
-// localhost, and a phone on the LAN would otherwise be refused.
+
 const stripOrigin = (proxy) => {
   proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin'));
 };
